@@ -1,6 +1,10 @@
 # Guan
 
-Guan is a general-purpose C# logic programming API. It is a close approximation of Prolog.
+Guan is a general-purpose C# logic programming API. It is a close approximation of Prolog. 
+
+Author: Lu Xun, Microsoft.
+
+
 
 # Contributing
 
