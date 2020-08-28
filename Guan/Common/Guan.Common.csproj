@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(EnvironmentConfig)" />
+  <Import Project="$(SRCROOT)\properties\service_fabric_managed_prod.props" />
+  <PropertyGroup>
+    <ProjectGuid>{0EC83CD5-2733-41E1-AFFA-A32F54C9D38A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Guan.Common</RootNamespace>
+    <AssemblyName>Guan.Common</AssemblyName>
+    <AssemblyTitle>Guan.Common</AssemblyTitle>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputPath>$(BaseDir)\out\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddFunc.cs" />
+    <Compile Include="AutoLoadResource.cs" />
+    <Compile Include="CancellableTaskSource.cs" />
+    <Compile Include="CompositePropertyContext.cs" />
+    <Compile Include="ConsoleSink.cs" />
+    <Compile Include="EmptyPropertyContext.cs" />
+    <Compile Include="EventLog.cs" />
+    <Compile Include="FileEventSink.cs" />
+    <Compile Include="GuanObject.cs" />
+    <Compile Include="GuanObjectTransformSpecification.cs" />
+    <Compile Include="GuanTime.cs" />
+    <Compile Include="Heap.cs" />
+    <Compile Include="IConfigurable.cs" />
+    <Compile Include="IPartialOrder.cs" />
+    <Compile Include="IPropertyContext.cs" />
+    <Compile Include="MathsFunc.cs" />
+    <Compile Include="PropertyMatchFunc.cs" />
+    <Compile Include="Range.cs" />
+    <Compile Include="ReleaseAssert.cs" />
+    <Compile Include="GuanException.cs" />
+    <Compile Include="GuanExpression.cs" />
+    <Compile Include="GuanFunc.cs" />
+    <Compile Include="GuanPredicate.cs" />
+    <Compile Include="SplitFunc.cs" />
+    <Compile Include="StringFunc.cs" />
+    <Compile Include="TextConfigFile.cs" />
+    <Compile Include="TimeRange.cs" />
+    <Compile Include="TimeRangeList.cs" />
+    <Compile Include="Tri.cs" />
+    <Compile Include="Utility.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
