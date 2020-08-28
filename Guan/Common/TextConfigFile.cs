@@ -1,16 +1,7 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  
-//      
-// @File: TextConfigFile.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Base class to construct objects from configuration information in
-//   text file.
-//   
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;

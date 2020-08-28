@@ -1,15 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  
-//      
-// @File: IPropertyContext.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Define the interface for retrieving named property.
-//   
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 
 namespace Guan.Common
 {
