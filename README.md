@@ -28,7 +28,7 @@ As stated above, Guan uses Prolog style syntax. We will not describe things that
 
 * If the argument is a compound, the argument name will be the same as the functor name. For example, somegoal(arg0=0, point(1, 2)). The name of the second argument is “point”. 
 
-* The custom behavior of a predicate type might implement type-specific syntax sugar. This is the case for all symptom types defined in the model. As described in the previous section, when a symptom type is defined, meta-data about is arguments are provided. The symptom type can thus use the information to automatically add arguments to a symptom predicate. More specifically, the syntax sugar for symptom type is that: if the head of a rule with the corresponding symptom type does not have an argument mentioned, the argument will be added automatically with the value being a variable with the same name. Furthermore, positional arguments are not allowed for symptom types. For example, suppose “mygoal” is a symptom type which has two arguments v1 and v2, the following rules are all equivalent: 
+* The custom behavior of a predicate type might implement type-specific syntax sugar: if the head of a rule with the corresponding type does not have an argument mentioned, the argument will be added automatically with the value being a variable with the same name. For example, suppose “mygoal” is a type which has two arguments v1 and v2, the following rules are all equivalent: 
 
 ```Prolog
 mygoal :- body 
@@ -38,7 +38,6 @@ mygoal(v1=?v1, v2=?v2) :- body
 mygoal(v1=?v1) :- body 
 ```
 
-* There is a special case for the “StartTime” and “EndTime” arguments for symptom types. They are present in every symptom type without the need for explicit definition. If a symptom appears in the head of a rule and these two arguments are not specified, they will be added automatically using the syntax sugar just mentioned. However, there is an exception: if the rule has a variable “?time” in some of its goals, then both the StartTime and EndTime arguments are assumed to use this “?time” variable as the argument value. This is for the case where a symptom has only a single timestamp instead of a time range. 
 
 # Contributing
 
