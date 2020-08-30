@@ -4,7 +4,7 @@ Guan is a general-purpose C# logic programming API and interpreter that employs 
 
 Author: Lu Xun, Microsoft.
 
-### Summary
+### Syntax
 
 As stated above, Guan uses Prolog style syntax. We will not describe things that are common with standard Prolog, but rather present the differences below: 
 
@@ -38,6 +38,61 @@ mygoal(v1=?v1, v2=?v2) :- body
 mygoal(v1=?v1) :- body 
 ```
 
+### Function & Constraint 
+
+The functor of some compound terms can be evaluated at runtime, when all of its arguments are grounded. They can be considered as functions. For example: 
+
+```Prolog
+add(?t1, -00:10:00) 
+```
+
+This is a compound term with function “add”. Since “add” is built-in evaluated function, when the variable “?t1” is instantiated, the entire compound term can be evaluated to become a constant term (in this case “?t1” should be a C# DateTime object, which is added with a TimeSpan of minus 10 minutes, so we effectively are getting a timestamp that is 10 minutes earlier than “?t1”). 
+
+```Prolog
+eq(?v1, ?v2) 
+```
+
+This is another example. The “eq” function will check whether the two arguments are equal (using C# object.Equals), the result is a constant of C# Boolean value. 
+
+Operators are defined for some commonly used functors. Below is a list with the obvious semantics: 
+
+"||", "&&", "==", "!=", ">", ">=","<","<=","+","-","*","/" 
+
+ 
+Evaluated compound terms can be nested. For example: 
+
+```Prolog
+?t2 > add(?t1, -00:10:00) && ?v1 == ?v2 
+```
+
+This is how logical programming in Guan handles arithmetic operations and comparisons, which is quite different from standard Prolog. Since we are free to add new functions which invokes arbitrary C# logic, Guan can provide functionalities that not possible in Prolog. The handling of timestamp is a simple example. 
+
+When a goal contains a function, it becomes a constraint and the goal is considered satisfied if and only if the evaluation is “True” (typically such goal should return Boolean result, but if the result is not Boolean, we treat null and empty string as False and everything else as True). If the function can’t be evaluated because of un-instantiated variables, the constraint will be passed along for the remaining goals, until the variables are instantiated. If there are still variables un-instantiated when there is no more goal left in the rule, the constraint will be ignored. 
+
+
+### Global Variables 
+
+ 
+Other than the logical variables that can be used in rules, many Prolog implementations provide something called “global variable”, which can be used across rules. One place where global variable can be convenient is when we want to pass some value to a rule several levels deep. If normal logical variable is used, they will have to be passed along each intermediate rule. In Guan, global variables are mostly used for passing the time range for searching the symptom. Many rules will need to use the time range so using global variable to make the range accessible from all the rules is quite convenient. 
+
+There are three built-in predicates related to global variable (similar to what SWI-Prolog provides): 
+
+* getval: retrieve the value of a global variable and unify it with a local logical variable. 
+
+* setval: set the value of a global variable, when the rule is backtracked, the global variable value will also be reset to its previous value (SWI-Prolog calls it b_setval). 
+
+* nb_setval: same as setval, except that the value is not getting reset during backtracking. 
+
+As an example, the below goal will retrieve the begin time of the search range and unify it with the logical variable “?StartTime” 
+
+```Prolog
+getval(RangeBegin, ?StartTime) 
+```
+And the one below sets the begin time to be one minute later than “?t”. 
+
+```Prolog
+setval(RangeBegin, add(?t, 00:01:00)) 
+```
 
 # Contributing
 
