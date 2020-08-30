@@ -1,6 +1,6 @@
 # Guan
 
-Guan is a general-purpose logic programming system - composed of a C# API and logic interpreter/query executor - that enables Prolog style syntax for writing logic rules and executing queries over these rules. External predicates are written in C# (the API piece) and logic rules (structured text) can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is configuration-as-logic (link to FH). 
+Guan is a general-purpose logic programming system composed of a C# API and logic interpreter/query executor. It enables Prolog style syntax for writing logic rules and executing queries over these rules. External predicates are written in C# (the API piece) and logic rules (structured text) can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is configuration-as-logic (link to FH). 
 
 Author: Lu Xun, Microsoft.
 
