@@ -6,7 +6,7 @@ Author: Lu Xun, Microsoft.
 
 ### Summary
 
-As stated abouve, Guan uses Prolog style syntax. We will not describe things that are common with standard Prolog, but rather present the differences below: 
+As stated above, Guan uses Prolog style syntax. We will not describe things that are common with standard Prolog, but rather present the differences below: 
 
 * The trailing ‘.’ Is not needed as delimiter for rules, since in Guan every rule is represented in a separate string. 
 
