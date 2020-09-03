@@ -1,0 +1,121 @@
+rules "test1(1)"
+rules "test1(2)"
+rules "test2(2)"
+rules "test2(3)"
+rules "test3(q(1, ?x))"
+rules "test4(?x, ?y) :- test3(q(?x, ?y)), test1(?y)"
+rules "test5(?x, ?y) :- ?x > 1 && ?y < 3, test1(?x), test2(?y)"
+rules "test6(?x) :- test1(?x), not(test2(?x))"
+rules "test7(?x) :- not(?x < 2), test1(?x)"
+rules "test8(?x, ?y, ?z) :- showtype(?x, ?y), ?x = 5, showtype(?x, ?z)"
+rules "test9(?x, ?y, ?z) :- setval(v1, 0), test1(?x), getval(v1, ?y), setval(v1, 5), getval(v1, ?z)"
+rules "test10(?x, ?y, ?z) :- setval(v1, 0), test1(?x), getval(v1, ?y), nb_setval(v1, 5), getval(v1, ?z)"
+rules "showtype(?x, var) :- var(?x)"
+rules "showtype(?x, nonvar) :- nonvar(?x)"
+rules "showtype(?x, atom) :- atom(?x)"
+rules "showtype(?x, compound) :- compound(?x)"
+rules "f1(?a, ?b, ?b, ?a)"
+expect "(x=1,y=2)"
+query "test4(?x, ?y), test2(?y)"
+verify
+expect "(x=2,y=2)"
+query "test5(?x, ?y)"
+verify
+expect "(x=?z,y=5,z=?z)"
+query "f1(?x, ?y, 5, ?z)"
+verify
+expect "(x=1)"
+query "test6(?x)"
+verify
+expect "(x=2)"
+query "test7(?x)"
+verify
+expect "(x=5,y=var,z=nonvar)"
+expect "(x=5,y=var,z=atom)"
+query "test8(?x, ?y, ?z)"
+verify
+expect "(y=?y,x=nonvar)"
+expect "(y=?y,x=compound)"
+query "showtype(q(?y), ?x)"
+verify
+expect "(x=1,y=0,z=5)"
+expect "(x=2,y=0,z=5)"
+query "test9(?x, ?y, ?z)"
+verify
+expect "(x=1,y=0,z=5)"
+expect "(x=2,y=5,z=5)"
+query "test10(?x, ?y, ?z)"
+verify
+rules "le(0)"
+rules "le(s(?x), s(?y)) :- le(?x, ?y)"
+rules "add(0, ?y, ?y)"
+rules "add(s(?x), ?y, s(?z)) :- add(?x, ?y, ?z)"
+rules "mul(0, _, 0)"
+rules "mul(s(?x), ?y, ?z) :- le(s(?x), ?z), add(?z1, ?y, ?z), mul(?x, ?y, ?z1)"
+expect "(x=0,y=s(s(s(0))))"
+expect "(x=s(0),y=s(s(0)))"
+expect "(x=s(s(0)),y=s(0))"
+expect "(x=s(s(s(0))),y=0)"
+query "add(?x, ?y, s(s(s(0))))"
+verify
+expect "(y=s(s(s(0))))"
+query "add(?y, ?y, s(s(s(s(s(s(0)))))))"
+verify
+expect "(x=s(0),y=s(s(s(s(s(s(0)))))))"
+expect "(x=s(s(0)),y=s(s(s(0))))"
+expect "(x=s(s(s(0))),y=s(s(0)))"
+expect "(x=s(s(s(s(s(s(0)))))),y=s(0))"
+query "mul(?x, ?y, s(s(s(s(s(s(0)))))))"
+verify
+rules clear
+rules "test1(5)"
+rules "test1(6)"
+rules "test1(7)"
+rules "test(add(?Y,1)) :- test1(?Y), WriteLine('Y={0}', ?Y), gt(?Y, 5)"
+expect "(X=7)"
+expect "(X=8)"
+query "test(?X)"
+verify
+rules clear
+rules "test(?N, ?R, ?t1) :- test1(?N, 0, ?R, this=?t1)"
+rules "test1(0, ?R, ?R) :- !"
+rules "test1(?N,?A, ?R) :- test1(?N - 1, ?A + ?N, ?R)"
+expect "(R=50005000,t1=test1(10000,0,50005000))"
+query "test(10000, ?R, ?t1)"
+verify
+rules clear
+rules "flatten(?Xs, ?Ys) :- _flatten(?Xs, ?Ys, [])"
+rules "_flatten([?X|?Xs], ?Ys, ?Zs) :- !, _flatten(?X, ?Ys, ?Ys1), _flatten(?Xs, ?Ys1, ?Zs)"
+rules "_flatten([], ?Xs, ?Xs) :- !"
+rules "_flatten(?X, [?X|?Xs], ?Xs)"
+expect "(X=[],Y=[1,2,3])"
+expect "(X=[1],Y=[2,3])"
+expect "(X=[1,2],Y=[3])"
+expect "(X=[1,2,3],Y=[])"
+query "append(?X, ?Y, [1,2,3])"
+verify
+expect "(X=1)"
+expect "(X=2)"
+expect "(X=3)"
+query "member(?X, [1,2,3])"
+verify
+expect "(X=3)"
+query "length([1,2,3], ?X)"
+verify
+expect "(X=[1,2,3,4])"
+query "flatten([1,[2,[3]],[4]], ?X)"
+verify
+expect "(X=[3,2,1])"
+query "reverse([1,2,3], ?X)"
+verify
+rules "queens(?N, ?Qs) :- gen_list(?N, ?Qs), place(?N, ?Qs, ?Ups, ?Downs)"
+rules "gen_list(0, [])"
+rules "gen_list(?N, [?Q|?L]) :- ?N > 0, gen_list(?N - 1, ?L)"
+rules "place(0)"
+rules "place(?I, ?Qs, ?Ups, [_|?Downs]) :- ?I > 0, place(?I - 1, ?Qs, [_|?Ups],?Downs), place2(?I,?Qs,?Ups,?Downs)"
+rules "place2(?Q, [?Q|_], [?Q|_], [?Q|_])"
+rules "place2(?Q, [_|?Qs], [_|?Ups], [_|?Downs]) :- place2(?Q, ?Qs, ?Ups, ?Downs)"
+expect "(Qs=[3,1,4,2])"
+expect "(Qs=[2,4,1,3])"
+query "queens(4, ?Qs)"
+!q
