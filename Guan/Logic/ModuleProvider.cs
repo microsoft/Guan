@@ -1,8 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
+﻿using System;
 using System.Collections.Generic;
 using Guan.Common;
 
@@ -12,7 +8,7 @@ namespace Guan.Logic
     /// Class maintaining predicate types from multiple modules to provide
     /// a lookup facility.
     /// </summary>
-    public class ModuleProvider : IFunctorProvider
+    internal class ModuleProvider : IFunctorProvider
     {
         /// <summary>
         /// Predicate types with the same name but different modules.

@@ -1,9 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Guan.Common;
@@ -134,17 +129,11 @@ namespace Guan.Logic
 
             QueryPredicateType queryType = new QueryPredicateType();
 
-            List<string> types = new List<string>
-            {
-                QueryTypeName
-            };
-            List<string> rules = new List<string>
-            {
-                QueryTypeName + " :- " + text
-            };
-
-            _ = Module.Parse("query", rules, new Provider(provider, queryType), types);
-            
+            List<string> types = new List<string>();
+            types.Add(QueryTypeName);
+            List<string> rules = new List<string>();
+            rules.Add(QueryTypeName + " :- " + text);
+            Module module = Module.Parse("query", rules, new Provider(provider, queryType), types);
             return new Query(queryType, queryContext);
         }
 
@@ -156,7 +145,6 @@ namespace Guan.Logic
             }
 
             CompoundTerm body = terms[terms.Count - 1];
-           
             for (int i = terms.Count - 2; i >= 0; i--)
             {
                 CompoundTerm current = body;
@@ -166,21 +154,17 @@ namespace Guan.Logic
             }
 
             QueryPredicateType queryType = new QueryPredicateType();
+
             CompoundTerm ruleTerm = new CompoundTerm(":-");
             ruleTerm.AddArgument(new CompoundTerm(QueryTypeName), "0");
             ruleTerm.AddArgument(body, "1");
 
-            List<string> types = new List<string>
-            {
-                QueryTypeName
-            };
-            List<Rule> rules = new List<Rule>
-            {
-                Rule.Parse(ruleTerm, ruleTerm.ToString())
-            };
+            List<string> types = new List<string>();
+            types.Add(QueryTypeName);
+            List<Rule> rules = new List<Rule>();
+            rules.Add(Rule.Parse(ruleTerm, ruleTerm.ToString()));
 
-            _ = Module.Parse("query", rules, new Provider(provider, queryType), types);
-            
+            Module module = Module.Parse("query", rules, new Provider(provider, queryType), types);
             return new Query(queryType, queryContext);
         }
     }

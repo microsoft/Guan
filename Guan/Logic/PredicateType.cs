@@ -1,8 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
+﻿using System;
 using System.Collections.Generic;
 using Guan.Common;
 
@@ -106,10 +102,8 @@ namespace Guan.Logic
                 return;
             }
 
-            List<string> publicTypes = new List<string>
-            {
-                Name
-            };
+            List<string> publicTypes = new List<string>();
+            publicTypes.Add(Name);
 
             Module module = Module.Parse(Name, rules, provider, publicTypes);
             ReleaseAssert.IsTrue(module_ == null || module_ == module);

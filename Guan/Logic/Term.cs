@@ -1,9 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Guan.Common;
 
 namespace Guan.Logic
@@ -17,7 +12,7 @@ namespace Guan.Logic
         {
         }
 
-        internal virtual VariableBinding Binding
+        public virtual VariableBinding Binding
         {
             get
             {
@@ -37,6 +32,7 @@ namespace Guan.Logic
             ReleaseAssert.IsTrue(IsGround());
 
             Constant constant = this as Constant;
+
             if (constant != null)
             {
                 return constant.Value;
@@ -48,6 +44,7 @@ namespace Guan.Logic
         public string GetStringValue()
         {
             Constant constant = this as Constant;
+
             if (constant == null)
             {
                 return null;
@@ -56,7 +53,7 @@ namespace Guan.Logic
             return constant.Value as string;
         }
 
-        internal Term ForceEvaluate(QueryContext context)
+        public Term ForceEvaluate(QueryContext context)
         {
             Term result = GetEffectiveTerm();
             ReleaseAssert.IsTrue(!(result is Variable), "{0} is not gounded", this);
@@ -80,11 +77,12 @@ namespace Guan.Logic
         /// not affected by backtracking,
         /// </summary>
         /// <returns>Grounded copy of the term</returns>
-        internal Term GetGroundedCopy()
+        public Term GetGroundedCopy()
         {
             Term term = GetEffectiveTerm();
 
             Constant constant = term as Constant;
+
             if (constant != null)
             {
                 return constant;
@@ -102,7 +100,7 @@ namespace Guan.Logic
             return result;
         }
 
-        internal Term UpdateBinding(Dictionary<Variable, Variable> mapping, VariableBinding binding)
+        public Term UpdateBinding(Dictionary<Variable, Variable> mapping, VariableBinding binding)
         {
             Term term = GetEffectiveTerm();
 
@@ -152,7 +150,7 @@ namespace Guan.Logic
             return this;
         }
 
-        internal bool Unify(Term other)
+        public bool Unify(Term other)
         {
             VariableBinding binding = Binding;
             if (binding == VariableBinding.Ground)
@@ -163,7 +161,7 @@ namespace Guan.Logic
             return binding.Unify(this, other);
         }
 
-        internal static Term FromObject(object value)
+        public static Term FromObject(object value)
         {
             Term term = value as Term;
             if (term != null)

@@ -1,9 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Guan.Common;
 
@@ -153,10 +148,8 @@ namespace Guan.Logic
 
             if (term.IsGround())
             {
-                List<object> result = new List<object>(1)
-                {
-                    term.GetValue()
-                };
+                List<object> result = new List<object>(1);
+                result.Add(term.GetValue());
                 return result;
             }
 

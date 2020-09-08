@@ -1,9 +1,4 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Guan.Common;
 
 namespace Guan.Logic
@@ -23,7 +18,7 @@ namespace Guan.Logic
         private int sequence_;
         private VariableBinding binding_;
 
-        internal Variable(string name, VariableBinding binding)
+        public Variable(string name, VariableBinding binding)
         {
             name_ = name;
             binding_ = binding;
@@ -31,7 +26,7 @@ namespace Guan.Logic
             sequence_ = -1;
         }
 
-        internal Variable(Variable other, VariableBinding binding)
+        public Variable(Variable other, VariableBinding binding)
         {
             name_ = other.name_;
             binding_ = binding;
@@ -57,7 +52,7 @@ namespace Guan.Logic
             }
         }
 
-        internal override VariableBinding Binding
+        public override VariableBinding Binding
         {
             get
             {
