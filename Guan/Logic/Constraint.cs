@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections.Generic;
 using Guan.Common;
 
@@ -39,8 +43,7 @@ namespace Guan.Logic
 
             public object Get(Variable variable, out bool isInclusive)
             {
-                //TODO: this is probably does not handle all the cases.
-                if (GetEffectiveTerm(variable) != GetEffectiveTerm(variable_))
+                if (variable != variable_.GetEffectiveTerm())
                 {
                     isInclusive = false;
                     return null;
@@ -48,18 +51,6 @@ namespace Guan.Logic
 
                 isInclusive = isInclusive_;
                 return value_;
-            }
-
-            private static Term GetEffectiveTerm(Variable variable)
-            {
-                Term term = variable.GetEffectiveTerm();
-                OutputVariable outputVariable = term as OutputVariable;
-                if (outputVariable != null)
-                {
-                    return GetEffectiveTerm(outputVariable.Original);
-                }
-
-                return term;
             }
         }
 
@@ -79,8 +70,10 @@ namespace Guan.Logic
             {
                 term_ = term;
                 variable_ = variable;
-                values_ = new List<object>(1);
-                values_.Add(value);
+                values_ = new List<object>(1)
+                {
+                    value
+                };
             }
 
             public CompoundTerm Term

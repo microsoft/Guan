@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Guan.Common;
@@ -122,7 +126,8 @@ namespace Guan.Logic
                                 tasks_.RemoveAt(tasks_.Count - 1);
                                 break;
                             }
-                            else if (goalResult != null)
+
+                            if (goalResult != null)
                             {
                                 // If an earlier parallel task is completed, cancel all tasks after
                                 // it.
@@ -146,10 +151,7 @@ namespace Guan.Logic
 
                                 break;
                             }
-                            else
-                            {
-                                tasks_.Remove(completedTask);
-                            }
+                            tasks_.Remove(completedTask);
                         }
                     }
 

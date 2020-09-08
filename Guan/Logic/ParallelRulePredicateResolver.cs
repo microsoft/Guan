@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Guan.Logic
@@ -31,8 +36,10 @@ namespace Guan.Logic
                 parallelTasks_ = new List<Task<UnificationResult>>(rules_.Count);
                 foreach (Rule rule in rules_)
                 {
-                    List<Rule> rules = new List<Rule>();
-                    rules.Add(rule);
+                    List<Rule> rules = new List<Rule>
+                    {
+                        rule
+                    };
                     RulePredicateResolver resolver = new RulePredicateResolver(module_, rules, false, Input, Constraint, Context.CreateChild());
                     resolvers_.Add(resolver);
                     parallelTasks_.Add(resolver.GetNextAsync());

@@ -1,4 +1,9 @@
-﻿namespace Guan.Logic
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+namespace Guan.Logic
 {
     /// <summary>
     /// Predicate types for term inspection.
@@ -22,22 +27,20 @@
                 {
                     return term is Variable;
                 }
-                else if (type_ == NonVar)
+
+                if (type_ == NonVar)
                 {
                     return !(term is Variable);
                 }
-                else if (type_ == Atom)
+                if (type_ == Atom)
                 {
                     return term is Constant;
                 }
-                else if (type_ == Compound)
+                if (type_ == Compound)
                 {
                     return term is CompoundTerm;
                 }
-                else
-                {
-                    return term.IsGround();
-                }
+                return term.IsGround();
             }
         }
 

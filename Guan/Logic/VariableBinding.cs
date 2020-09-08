@@ -1,4 +1,9 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using System;
 using System.Threading;
 using System.Collections.Generic;
 using Guan.Common;
@@ -38,7 +43,7 @@ namespace Guan.Logic
 
         private static long Seq = 0;
 
-        public static readonly VariableBinding Ground = new VariableBinding(new VariableTable(), 0, 0);
+        internal static readonly VariableBinding Ground = new VariableBinding(new VariableTable(), 0, 0);
 
         public VariableBinding(VariableTable variableTable, int goalCount, int level)
         {

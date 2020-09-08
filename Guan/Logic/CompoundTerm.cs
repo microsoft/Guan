@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -13,7 +17,7 @@ namespace Guan.Logic
     public class CompoundTerm : Term, IPropertyContext, IWritablePropertyContext, IEnumerable
     {
         private Functor functor_;
-        private VariableBinding binding_;
+        public VariableBinding binding_;
         private List<TermArgument> arguments_;
         private TermOption option_;
 
@@ -40,7 +44,7 @@ namespace Guan.Logic
         {
         }
 
-        public CompoundTerm(Functor functor, VariableBinding binding, List<TermArgument> arguments)
+        internal CompoundTerm(Functor functor, VariableBinding binding, List<TermArgument> arguments)
         {
             functor_ = functor;
             binding_ = binding;
@@ -68,7 +72,7 @@ namespace Guan.Logic
             }
         }
 
-        public override VariableBinding Binding
+        internal override VariableBinding Binding
         {
             get
             {

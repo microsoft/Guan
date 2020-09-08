@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Guan.Common;
@@ -101,6 +105,7 @@ namespace Guan.Logic
                     }
 
                     CompoundTerm body = ToGoal(rule.Arguments[1].Value);
+                    
                     if (body == null)
                     {
                         throw new GuanException("Invalid body in rule {0}", text);
@@ -121,12 +126,14 @@ namespace Guan.Logic
         private static CompoundTerm ToGoal(Term term)
         {
             CompoundTerm result = term as CompoundTerm;
+
             if (result != null)
             {
                 return result;
             }
 
             string name = term.GetStringValue();
+
             if (name == null)
             {
                 return null;

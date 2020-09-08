@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections.Generic;
 using Guan.Common;
 
@@ -130,15 +134,18 @@ namespace Guan.Logic
             for (int i = 0; i < rules.Count;)
             {
                 string typeName = rules[i].Head.Functor.Name;
+
                 if (typeName != "desc")
                 {
                     PredicateType type;
+
                     if (!types.TryGetValue(typeName, out type))
                     {
                         if (provider != null)
                         {
                             type = provider.FindFunctor(typeName, result) as PredicateType;
                         }
+
                         if (type == null)
                         {
                             bool isPublic = (publicTypes != null ? publicTypes.Contains(typeName) : !typeName.StartsWith("_"));
@@ -159,16 +166,19 @@ namespace Guan.Logic
                 }
             }
 
-            for (int i = 0; i <  rules.Count; i++)
+            for (int i = 0; i < rules.Count; i++)
             {
                 bool remove = false;
+
                 foreach (CompoundTerm goal in rules[i].Goals)
                 {
                     string typeName = goal.Functor.Name;
                     PredicateType type;
+
                     if (!types.TryGetValue(typeName, out type))
                     {
                         type = GetGoalPredicateType(typeName, provider, result);
+
                         if (type == FailPredicateType.NotApplicable)
                         {
                             remove = true;
@@ -294,10 +304,8 @@ namespace Guan.Logic
             {
                 return evaluatedFunctor.ConstraintType;
             }
-            else
-            {
-                return functor as PredicateType;
-            }
+
+            return functor as PredicateType;
         }
 
         private static void UpdateFunctor(CompoundTerm term, Dictionary<string, PredicateType> types, IFunctorProvider provider, Module from)
@@ -331,24 +339,26 @@ namespace Guan.Logic
 
         private static Module CreateSystemModule()
         {
-            List<string> rules = new List<string>();
-            rules.Add("append([], ?Ys, ?Ys)");
-            rules.Add("append([?X|?Xs], ?Ys, [?X|?Zs]) :- append(?Xs, ?Ys, ?Zs)");
-            rules.Add("member(?X, [?X|_]");
-            rules.Add("member(?X, [_|?Xs]) :- member(?X, ?Xs)");
-            rules.Add("length([], 0)");
-            rules.Add("length([_|?Xs], ?Y) :- length(?Xs, ?Z), ?Y = ?Z + 1");
-            rules.Add("reverse(?Xs, ?Ys) :- _reverse(?Xs, [], ?Ys)");
-            rules.Add("_reverse([], ?Ys, ?Ys");
-            rules.Add("_reverse([?X|?Xs], ?A, ?Ys) :- _reverse(?Xs, [?X|?A], ?Ys)");
-            rules.Add("AddToList(?X, [], [?X])");
-            rules.Add("AddToList(?X, [?X|?Ys], [?X|?Ys]) :- !");
-            rules.Add("AddToList(?X, [?Y|?Ys], [?X,?Y|?Ys]) :- ?X < ?Y, !");
-            rules.Add("AddToList(?X, [?Y|?Ys], [?Y|?Zs]) :- AddToList(?X, ?Ys, ?Zs)");
-            rules.Add("AddToMap(kv(?K,?V), [], [kv(?K,?V)])");
-            rules.Add("AddToMap(kv(?K,?V), [kv(?K,_)|?Ys], [kv(?K,?V)|?Ys]) :- !");
-            rules.Add("AddToMap(kv(?K,?V), [kv(?K1,V1)|?Ys], [kv(?K,?V),kv(?K1,V1)|?Ys]) :- ?K < ?K1, !");
-            rules.Add("AddToMap(kv(?K,?V), [kv(?K1,V1)|?Ys], [kv(?K1,V1)|?Zs]) :- AddToMap(kv(?K,?V), ?Ys, ?Zs)");
+            List<string> rules = new List<string>
+            {
+                "append([], ?Ys, ?Ys)",
+                "append([?X|?Xs], ?Ys, [?X|?Zs]) :- append(?Xs, ?Ys, ?Zs)",
+                "member(?X, [?X|_]",
+                "member(?X, [_|?Xs]) :- member(?X, ?Xs)",
+                "length([], 0)",
+                "length([_|?Xs], ?Y) :- length(?Xs, ?Z), ?Y = ?Z + 1",
+                "reverse(?Xs, ?Ys) :- _reverse(?Xs, [], ?Ys)",
+                "_reverse([], ?Ys, ?Ys",
+                "_reverse([?X|?Xs], ?A, ?Ys) :- _reverse(?Xs, [?X|?A], ?Ys)",
+                "AddToList(?X, [], [?X])",
+                "AddToList(?X, [?X|?Ys], [?X|?Ys]) :- !",
+                "AddToList(?X, [?Y|?Ys], [?X,?Y|?Ys]) :- ?X < ?Y, !",
+                "AddToList(?X, [?Y|?Ys], [?Y|?Zs]) :- AddToList(?X, ?Ys, ?Zs)",
+                "AddToMap(kv(?K,?V), [], [kv(?K,?V)])",
+                "AddToMap(kv(?K,?V), [kv(?K,_)|?Ys], [kv(?K,?V)|?Ys]) :- !",
+                "AddToMap(kv(?K,?V), [kv(?K1,V1)|?Ys], [kv(?K,?V),kv(?K1,V1)|?Ys]) :- ?K < ?K1, !",
+                "AddToMap(kv(?K,?V), [kv(?K1,V1)|?Ys], [kv(?K1,V1)|?Zs]) :- AddToMap(kv(?K,?V), ?Ys, ?Zs)"
+            };
 
             return Module.Parse("System", rules, null);
         }

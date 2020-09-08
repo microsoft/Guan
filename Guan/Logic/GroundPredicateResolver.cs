@@ -20,7 +20,7 @@ namespace Guan.Logic
         public override async Task<UnificationResult> OnGetNextAsync()
         {
             UnificationResult result = null;
-            
+
             while (result == null && !Completed)
             {
                 Term term = await GetNextTermAsync();

@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
 using System.Collections.Generic;
 using Guan.Common;
 
@@ -72,7 +76,6 @@ namespace Guan.Logic
 
         private static readonly OperatorTri Operators = CreateOperators();
         private static readonly Functor IdentityFunctor = new Functor("()");
-        private static readonly Operator CommaOperator = Operators.Get(",");
         private static readonly Operator CloseParentheses = Operators.Get(")");
 
         private static OperatorTri CreateOperators()
@@ -212,26 +215,18 @@ namespace Guan.Logic
             }
 
             ReleaseAssert.IsTrue(pending.Count == 0);
+            last = term as CompoundTerm;
+            if (last != null && last.Functor == IdentityFunctor && last.Arguments.Count == 1)
+            {
+                term = last.Arguments[0].Value;
+            }
 
-            return ConvertIdentity(term);
+            return term;
         }
 
         private static void AddArgument(CompoundTerm term, Term arg)
         {
-            term.AddArgument(ConvertIdentity(arg), term.Arguments.Count.ToString());
-        }
-
-        private static Term ConvertIdentity(Term arg)
-        {
-            CompoundTerm compoundArg = arg as CompoundTerm;
-            while (compoundArg != null && compoundArg.Functor == IdentityFunctor)
-            {
-                ReleaseAssert.IsTrue(compoundArg.Arguments.Count == 1);
-                arg = compoundArg.Arguments[0].Value;
-                compoundArg = arg as CompoundTerm;
-            }
-
-            return arg;
+            term.AddArgument(arg, term.Arguments.Count.ToString());
         }
 
         /// <summary>
@@ -263,9 +258,9 @@ namespace Guan.Logic
                 return true;
             }
 
-            if (lastOp == null)
+            if (lastOp == null || lastOp.Operator.Name == "(")
             {
-                if (current.Name != "," || last == IdentityFunctor)
+                if (current.Name != ",")
                 {
                     return false;
                 }
@@ -326,7 +321,7 @@ namespace Guan.Logic
                     }
 
                     int end = SkipQuote(text, c, offset);
-                    token = text.Substring(start, end - start + 1);
+                    token = text.Substring(start + 1, end - start - 1);
                     offset = end + 1;
                 }
                 else
@@ -391,7 +386,8 @@ namespace Guan.Logic
                 {
                     return i;
                 }
-                else if (text[i] == '\\')
+
+                if (text[i] == '\\')
                 {
                     i++;
                 }
