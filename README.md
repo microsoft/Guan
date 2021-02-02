@@ -70,30 +70,6 @@ This is how logical programming in Guan handles arithmetic operations and compar
 When a goal contains a function, it becomes a constraint and the goal is considered satisfied if and only if the evaluation is “True” (typically such goal should return Boolean result, but if the result is not Boolean, we treat null and empty string as False and everything else as True). If the function can’t be evaluated because of un-instantiated variables, the constraint will be passed along for the remaining goals, until the variables are instantiated. If there are still variables un-instantiated when there is no more goal left in the rule, the constraint will be ignored. 
 
 
-### Global Variables 
-
- 
-Other than the logical variables that can be used in rules, many Prolog implementations provide something called “global variable”, which can be used across rules. One place where global variable can be convenient is when we want to pass some value to a rule several levels deep. If normal logical variable is used, they will have to be passed along each intermediate rule. In Guan, global variables are mostly used for passing the time range for searching the symptom. Many rules will need to use the time range so using global variable to make the range accessible from all the rules is quite convenient. 
-
-There are three built-in predicates related to global variable (similar to what SWI-Prolog provides): 
-
-* getval: retrieve the value of a global variable and unify it with a local logical variable. 
-
-* setval: set the value of a global variable, when the rule is backtracked, the global variable value will also be reset to its previous value (SWI-Prolog calls it b_setval). 
-
-* nb_setval: same as setval, except that the value is not getting reset during backtracking. 
-
-As an example, the below goal will retrieve the begin time of the search range and unify it with the logical variable “?StartTime” 
-
-```Prolog
-getval(RangeBegin, ?StartTime) 
-```
-And the one below sets the begin time to be one minute later than “?t”. 
-
-```Prolog
-setval(RangeBegin, add(?t, 00:01:00)) 
-```
-
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
