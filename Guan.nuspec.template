@@ -18,7 +18,7 @@
     </dependencies>
     <projectUrl>https://github.com/microsoft/guan</projectUrl>
     <tags>guan logic-programming netstandard20 csharp</tags>
-    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+    <copyright>ï¿½ Microsoft Corporation. All rights reserved.</copyright>
   </metadata>
   <files>
     <file src="Guan.dll" target="lib\netstandard2.0" />
