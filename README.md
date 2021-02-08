@@ -1,12 +1,12 @@
 # Guan
 
-Guan is a general-purpose logic programming system composed of a C# API and logic interpreter/query executor. It enables Prolog style syntax for writing logic rules and executing queries over these rules. External predicates are written in C# (the API piece) and logic rules (structured text) can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is configuration-as-logic (see [FabricHealer](https://github.com/microsoft/service-fabric-healer) for a concrete example of Configuration-as-Logic using Guan.). 
+Guan is a general-purpose logic programming system composed of a C# API and logic engine. It enables Prolog style syntax for writing logic rules and the inter-op between such rules with regular C# code. External predicates are written in C# (the API piece) and logic rules (structured text) can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is configuration-as-logic (see [FabricHealer](https://github.com/microsoft/service-fabric-healer) for a concrete example of Configuration-as-Logic using Guan.).
 
 Author: Lu Xun, Microsoft.
 
 ### Syntax
 
-As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/index.php). We will not describe things that are common with standard Prolog, but rather present the differences below: 
+As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/index.php). We will not describe things that are common with standard Prolog, but rather present the differences below (they are different mostly to allow more natural interop between rules and C# code): 
 
 * The trailing ‘.’ Is not needed as delimiter for rules, since in Guan every rule is represented in a separate string. 
 
