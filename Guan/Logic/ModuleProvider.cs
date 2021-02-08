@@ -12,7 +12,7 @@ namespace Guan.Logic
     /// Class maintaining predicate types from multiple modules to provide
     /// a lookup facility.
     /// </summary>
-    internal class ModuleProvider : IFunctorProvider
+    public class ModuleProvider : IFunctorProvider
     {
         /// <summary>
         /// Predicate types with the same name but different modules.

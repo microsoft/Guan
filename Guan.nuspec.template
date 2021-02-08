@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="3.3.0">
+    <id>%PACKAGE_ID%</id>
+    <version>1.0.0</version>
+    <authors>Microsoft</authors>
+    <license type="expression">MIT</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <title>Guan Logic Progamming Library</title>
+    <icon>icon.png</icon>
+    <language>en-US</language>
+    <description>Guan is a general-purpose logic programming system with a C# API for external predicate implementation. It is a close approximation of Prolog, with extended capabilities and some differences.</description>
+    <contentFiles>
+      <files include="**" buildAction="None" copyToOutput="true" />
+    </contentFiles>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0" />
+    </dependencies>
+    <projectUrl>https://github.com/microsoft/guan</projectUrl>
+    <tags>guan logic-programming netstandard20 csharp</tags>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+  </metadata>
+  <files>
+    <file src="Guan.dll" target="lib\netstandard2.0" />
+    <file src="%ROOT_PATH%\icon.png" target="" />
+  </files>
+</package>
