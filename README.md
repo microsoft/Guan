@@ -63,13 +63,16 @@ Operators are defined for some commonly used functors. Below is a list with the 
 Evaluated compound terms can be nested. For example: 
 
 ```Prolog
-
 ?t2 > add(?t1, -00:10:00) && ?v1 == ?v2 
 ```
 
-This is how logical programming in Guan handles arithmetic operations and comparisons, which is quite different from standard Prolog. Since we are free to add new functions which invokes arbitrary C# logic, Guan can provide functionalities that not possible in Prolog. The handling of timestamp is a simple example. 
+This is how logical programming in Guan handles arithmetic operations and comparisons, which is quite different than standard Prolog. 
+Since we are free to add new functions which invoke arbitrary C# logic, Guan can provide capabilities that are not possible in Prolog.
 
-When a goal contains a function, it becomes a constraint and the goal is considered satisfied if and only if the evaluation is “True” (typically such goal should return Boolean result, but if the result is not Boolean, we treat null and empty string as False and everything else as True). If the function can’t be evaluated because of un-instantiated variables, the constraint will be passed along for the remaining goals, until the variables are instantiated. If there are still variables un-instantiated when there is no more goal left in the rule, the constraint will be ignored. 
+When a goal contains a function, it becomes a constraint and the goal is considered satisfied if and only if the evaluation is “True” 
+(typically such goal should return Boolean result, but if the result is not Boolean, we treat null and empty string as False and everything else as True). 
+If the function can’t be evaluated because of un-instantiated variables, the constraint will be passed along for the remaining goals, until the variables are instantiated. 
+If there are still variables un-instantiated when there is no more goal left in the rule, the constraint will be ignored. 
 
 
 
