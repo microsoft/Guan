@@ -56,8 +56,9 @@ This is another example. The “eq” function will check whether the two argume
 
 Operators are defined for some commonly used functors. Below is a list with the obvious semantics: 
 
+```
 "||", "&&", "==", "!=", ">", ">=","<","<=","+","-","*","/" 
-
+```
  
 Evaluated compound terms can be nested. For example: 
 
@@ -77,33 +78,21 @@ When a goal contains a function, it becomes a constraint and the goal is conside
 Guan provides some standard built-in predicates. Many of them have already been described in the examples, for the others please refer to documentation for standard Prolog 
 ```
 assert 
-
 ! (cut) 
-
 fail 
-
 not 
-
 var 
-
 nonvar 
-
 atom 
-
 compound 
-
 ground 
-
 = (unify) 
 
 Some commonly used predicates for list related operations: 
 
 append 
-
 member 
-
 length 
-
 reverse 
 ```
 
@@ -343,7 +332,9 @@ In the application config file, set EnableTrace to True. This will enable trace 
 
 Include a “trace” goal in a rule, this will only enable trace after the goal is executed. Conversely, you can disable trace with a “notrace” goal.  
 
-```trace,append(?X, ?Y, [1,2,3]) ```
+```Prolog
+trace,append(?X, ?Y, [1,2,3]) 
+```
 
 The best way to understand the “trace” and “notrace” goal is to think of them as a special setval predicate where the global variable name and value do not need to be specified explicitly. On backtracking, the previous flag for enable/disable trace will be restored. 
 
@@ -353,7 +344,9 @@ The trace will be output to both console and the .trace file.
 
 Besides the standard trace, you can add your own by using the WriteLine predicate. For example: 
 
-```WriteLine(‘X={0},Y={1}”, ?X, ?Y)``` 
+```Prolog
+WriteLine(‘X={0},Y={1}”, ?X, ?Y)
+``` 
 
 
 ### Implementing Functions 
@@ -399,7 +392,6 @@ internal class ToLowerFunc : UnaryFunc
         { 
             return string.Empty; 
         } 
-
  
         return arg.ToString().ToLower(); 
     } 
