@@ -63,6 +63,7 @@ Operators are defined for some commonly used functors. Below is a list with the 
 Evaluated compound terms can be nested. For example: 
 
 ```Prolog
+
 ?t2 > add(?t1, -00:10:00) && ?v1 == ?v2 
 ```
 
