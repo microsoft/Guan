@@ -112,14 +112,22 @@ The below predicates are either unique to Guan, or have some special semantics:
 For temporal reasoning, an event often needs to be matched with another event that is closest to it. For example, consider a sequence of events of Start, End, Start, End, Start, Start, End… Such sequence could be the start and end of a process as an example. Note that sometimes the End event is missing, as the process could have crashed. Now suppose that we want to define a frame type ProcessStartEnd. We cannot use a simple rule like this: 
 
 ```Prolog
-ProcessStartEnd (?StartTime, ?EndTime) :- Start(time=?StartTime), End(time=?EndTime), ?EndTime > ?StartTime 
+ProcessStartEnd(?StartTime, ?EndTime) :- Start(time=?StartTime),
+    End(time=?EndTime),
+    ?EndTime > ?StartTime 
 ```
 
 As this could match the start of a process instance with the end of a later instance. Of course, if there is a unique process id we can use, such problem can be avoided. But what if there is no such id and all we can rely on is the order of the events? One solution is to use negation as failure: 
 
 ```Prolog
-ProcessStartEnd (?StartTime, ?EndTime) :- Start(time=?StartTime), End(time=?EndTime), ?EndTime > ?StartTime, not Between(?StartTime, ?EndTime) 
-Between(?StartTime, ?EndTime) :- Start(time=?t), ?t >?StartTime, ?t < EndTime 
+ProcessStartEnd(?StartTime, ?EndTime) :- Start(time=?StartTime), 
+    End(time=?EndTime), 
+    ?EndTime > ?StartTime, 
+    not Between(?StartTime, ?EndTime) 
+
+Between(?StartTime, ?EndTime) :- Start(time=?t), 
+    ?t >?StartTime, 
+    ?t < EndTime 
 ```
 
 This works, but it requires the trace to be searched twice (assuming the implementation of the Start and End depends on some linear scan of trace). 
@@ -127,7 +135,10 @@ This works, but it requires the trace to be searched twice (assuming the impleme
 Guan provides an alternative: when the Start event is found, in addition to search for the End event, we search for the next Start event in parallel. This is as if we are expanding the search tree at different levels simultaneously. Whenever the search for the Start is found, the pending search for End, if any, is cancelled. Below is the rule for this approach: 
 
 ```Prolog
-ProcessStartEnd (?StartTime, ?EndTime) :- Start(time=?StartTime), forwardcut, End(time=?EndTime), ?EndTime > ?StartTime 
+ProcessStartEnd(?StartTime, ?EndTime) :- Start(time=?StartTime),
+    forwardcut,
+    End(time=?EndTime), 
+    ?EndTime > ?StartTime 
 ```
 
 It is almost the same as the initial wrong version, except that a “forwardcut” goal is added, instructing the infrastructure to keep expanding the choice points for the goal before it while exploring the next goals and perform the cancellation as appropriate. Note that this is again relying on the multiplexing behavior of the parallel tasks. 
