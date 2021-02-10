@@ -70,7 +70,346 @@ This is how logical programming in Guan handles arithmetic operations and compar
 When a goal contains a function, it becomes a constraint and the goal is considered satisfied if and only if the evaluation is “True” (typically such goal should return Boolean result, but if the result is not Boolean, we treat null and empty string as False and everything else as True). If the function can’t be evaluated because of un-instantiated variables, the constraint will be passed along for the remaining goals, until the variables are instantiated. If there are still variables un-instantiated when there is no more goal left in the rule, the constraint will be ignored. 
 
 
-# Contributing
+
+### Built-in Predicates (aka System Predicates)
+
+ 
+Guan provides some standard built-in predicates. Many of them have already been described in the examples, for the others please refer to documentation for standard Prolog 
+```
+assert 
+
+! (cut) 
+
+fail 
+
+not 
+
+var 
+
+nonvar 
+
+atom 
+
+compound 
+
+ground 
+
+= (unify) 
+
+Some commonly used predicates for list related operations: 
+
+append 
+
+member 
+
+length 
+
+reverse 
+```
+
+Popular Prolog implementations typically have many more defined, which might be added to Guan in the future. 
+
+The below predicates are either unique to Guan, or have some special semantics: 
+
+
+**enumerable**: takes a C# collection object as the first argument and returns the members as the second argument. 
+
+**forwardcut**: described in the advanced example 
+
+**getval, setval, nb_setval**: described in the global variable section 
+
+**is**: in standard Prolog, it is used for arithmetic operations. In Guan, since compound term can be evaluated automatically, this is typically not needed. When used, it just performs the evaluation of the second argument and unify the result with the first argument. For that purpose, the unify (“=”) predicate can also be used. 
+
+**trace**: enable tracing of rule execution. 
+
+**notrace**: disable tracing. 
+
+**WriteLine**: output to console and trace  
+  
+
+### External Predicate 
+
+In addition to the predicates defined by rules and the built-in predicates, sometimes we need to implement new predicates, typically for interacting with external environment. In such case, a subclass of PredicateType needs to be created with the following member implemented: 
+
+public override PredicateResolver CreateResolver(CompoundTerm input, Constraint constraint, QueryContext context) 
+
+ 
+
+The implementation should usually create a subclass of PredicateResolver and returns an instance of this subclass in this above method. 
+
+Below we will describe two simple types of external predicates, one for output and one for input. 
+
+To implement a predicate type for output (e.g. a repair action), typically we will want to derive its PredicateResolver from a simple base class: BooleanPredicateResolver. Such a predicate defines a abstract method that is to be implemented: 
+
+protected abstract bool Check()  
+
+If this function returns true, the corresponding goal will succeed and otherwise fail. The function can perform arbitrary logic, based on the input arguments passed in. 
+``` C#
+protected override bool Check() 
+{ 
+    string format = Input.Arguments[0].Value.GetEffectiveTerm().GetStringValue(); 
+    object[] args = new object[Input.Arguments.Count - 1]; 
+    for (int i = 1; i < Input.Arguments.Count; i++) 
+
+    { 
+        args[i - 1] = Input.Arguments[i].Value.GetEffectiveTerm(); 
+    } 
+
+    EventLog.WriteInfo("WriteLine", format, args); 
+    return true; 
+} 
+
+ ```
+
+The above is the implementation for the built-in predicate “WriteLine”. We can see that it gets the input values from the Input.Arguments collection. Note that to get the argument value, GetEffectiveTerm() usually needs to be called, which will deal with arguments that contain variables that have been instantiated. For simple predicates used for output, the input should be grounded, i.e. all variables should have been instantiated with a value. The argument returned from GetEffectiveTerm () is a Term, if it is constant, GetValue() can be called to get the C# object value or GetStringValue() can be called if the constant is a string. 
+
+Input predicates usually take in some arguments to specify the query parameter, the rest arguments will contain the query result. We will just consider the case where the query result contains no variables which should be the most typical case when implementing a predicate to query regular data source. 
+
+In such case, the base class GroundPredicateResolver should be used, which has the following abstract method to be implemented: 
+
+```C#
+protected abstract Task<Term> GetNextTermAsync(); 
+```
+
+Each result should be represented as a Term (typically a CompoundTerm) and returned in this method. When there are multiple results, the method will be invoked multiple times, unless the rule only wants to call the corresponding goal once (e.g. when cut is being used). 
+
+To retrieve the query criteria, the value of input arguments can be examined, same as what is described for the output predicates. 
+
+ 
+
+### Debugging 
+
+A convenient to debug rules is by examining the trace. Guan can output trace when the rules are executed. For example, below are the trace for executing the query “append(?X, ?Y, [1,2,3])”: 
+
+```
+2020-2-26 10:39:33.283 
+Trace 
+1 
+Call	[1,0]: append(?$0,?$1,[1,2,3]) 
+
+2020-2-26 10:39:33.284 
+Trace 
+1 
+Exit	[1,1]: append([],[1,2,3],[1,2,3]) 
+
+2020-2-26 10:39:33.285 
+Trace 
+1 
+Call	[1,1]: append(?$0,?$1,[1,2,3]) 
+ 
+2020-2-26 10:39:33.286 
+Trace 
+1 
+Call	[2,0]: append(?Xs,?$1,[2,3]) 
+ 
+2020-2-26 10:39:33.286 
+Trace 
+1 
+Exit	[2,1]: append([],[2,3],[2,3]) 
+
+2020-2-26 10:39:33.286 
+Trace 
+1 
+Exit	[1,2]: append([1],[2,3],[1,2,3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Call	[1,2]: append(?$0,?$1,[1,2,3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Call	[2,1]: append(?Xs,?$1,[2,3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Call	[3,0]: append(?Xs,?$1,[3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Exit	[3,1]: append([],[3],[3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Exit	[2,2]: append([2],[3],[2,3]) 
+
+2020-2-26 10:39:33.287 
+Trace 
+1 
+Exit	[1,3]: append([1,2],[3],[1,2,3]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Call	[1,3]: append(?$0,?$1,[1,2,3]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Call	[2,2]: append(?Xs,?$1,[2,3]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Call	[3,1]: append(?Xs,?$1,[3]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Call	[4,0]: append(?Xs,?$1,[]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Exit	[4,1]: append([],[],[]) 
+
+2020-2-26 10:39:33.288 
+Trace 
+1 
+Exit	[3,2]: append([3],[],[3]) 
+
+2020-2-26 10:39:33.289 
+Trace 
+1 
+Exit	[2,3]: append([2,3],[],[2,3]) 
+
+2020-2-26 10:39:33.289 
+Trace 
+1 
+Exit	[1,4]: append([1,2,3],[],[1,2,3]) 
+
+2020-2-26 10:39:33.289 
+Trace 
+1 
+Call	[1,4]: append(?$0,?$1,[1,2,3]) 
+
+2020-2-26 10:39:33.289 
+Trace 
+1 
+Call	[2,3]: append(?Xs,?$1,[2,3]) 
+
+
+2020-2-26 10:39:33.289 
+Trace 
+1 
+Call	[3,2]: append(?Xs,?$1,[3]) 
+
+2020-2-26 10:39:33.290 
+Trace 
+1 
+Call	[4,1]: append(?Xs,?$1,[]) 
+
+2020-2-26 10:39:33.290 
+Trace 
+1 
+Fail	[4,1]: append(?Xs,?$1,[]) 
+
+2020-2-26 10:39:33.290 
+Trace 
+1 
+Fail	[3,2]: append(?Xs,?$1,[3]) 
+
+2020-2-26 10:39:33.290 
+Trace 
+1 
+Fail	[2,3]: append(?Xs,?$1,[2,3]) 
+
+2020-2-26 10:39:33.290 
+Trace 
+1 
+Fail	[1,4]: append(?$0,?$1,[1,2,3]) 
+
+ ```
+
+ 
+
+There are basically two types of trace, one for calling a goal and another for the result: 
+
+Call: this is when a goal is called. Sometimes you will see T-Call, this is similar to Call, but with tail-optimization. In this trace, you typically see variables in the arguments. 
+
+Exit/Fail: when the goal is successful, you will see the Exit trace, otherwise you will see Fail. Compared with the Call trace, typically you will see some variables getting instantiated. 
+
+Every trace has a pair of numbers like [4,0]. The first number indicates the depth of the call frame. The number will increase for the “Call” trace and decrease for “Exit” or “Fail” trace. You can also match the Call trace with the Exit/Fail trace by this number to see the invocation and result for the same call. The second number is the iteration count. When a goal is initially called, the number is 0, when it returned the number gets incremented by 1. 
+
+Such trace is not enabled by default. And there are two ways to enable them: 
+
+In the application config file, set EnableTrace to True. This will enable trace for the entire process. 
+
+```<add key="EnableTrace" value="True"/> ```
+
+Include a “trace” goal in a rule, this will only enable trace after the goal is executed. Conversely, you can disable trace with a “notrace” goal.  
+
+```trace,append(?X, ?Y, [1,2,3]) ```
+
+The best way to understand the “trace” and “notrace” goal is to think of them as a special setval predicate where the global variable name and value do not need to be specified explicitly. On backtracking, the previous flag for enable/disable trace will be restored. 
+
+When trace is enabled this way, tail optimization is disabled. 
+
+The trace will be output to both console and the .trace file. 
+
+Besides the standard trace, you can add your own by using the WriteLine predicate. For example: 
+
+```WriteLine(‘X={0},Y={1}”, ?X, ?Y)``` 
+
+
+### Implementing Functions 
+
+As described previously, functions invoking arbitrary C# logic can be used in the rules either as constraints or to perform some operations. They can also be used in records.txt file to parse data into C# objects. In fact, the Guan infrastructure also uses functions for many other purposes which will not be described in this document. 
+
+This section will discuss how the developer can implement his own function. 
+
+The base class for a function that can be used in Guan is GuanFunc, which defines the following abstract method that needs to be implemented: 
+
+```C# 
+public abstract object Invoke(IPropertyContext context, object[] args); 
+```
+
+The difference between a GuanFunc and a normal function is that GuanFunc can take a context object as input, which allows such function to be context-dependent behavior. During the execution of rules, the context is an object that contains all the global variables, which means that a function can access the global variables if needed. 
+
+Most functions should in rules or records.txt do not depend on the context though. Such function can instead derive from a sub class of GuanFunc called StandaloneFunc, with the abstract method below: 
+
+```C#
+public abstract object Invoke(object[] args); 
+```
+
+You can see that the only difference is that the context argument is gone. 
+
+If your function takes only one or two input argument(s), you can also derive from UnaryFunc or BinaryFunc. 
+
+After a function class is implemented, it needs to get exposed to the Guan infrastructure so that Guan knows about its existence. The simplest way is to define a singleton instance of the function as a public static property. 
+
+Below is a simple example of a function ToLower: 
+```C#
+internal class ToLowerFunc : UnaryFunc 
+{ 
+    public static ToLowerFunc Singleton = new ToLowerFunc(); 
+
+    protected ToLowerFunc() : base("ToLower") 
+    { 
+
+    } 
+
+    public override object UnaryInvoke(object arg) 
+    { 
+        if (arg == null) 
+        { 
+            return string.Empty; 
+        } 
+
+ 
+        return arg.ToString().ToLower(); 
+    } 
+} 
+
+```
+ 
+
+
+### Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
