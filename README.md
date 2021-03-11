@@ -145,7 +145,11 @@ It is almost the same as the initial wrong version, except that a “forwardcut�
 
 In general, the sequential backtracking is a restriction of the original Prolog search mechanism and there are various tweaks we can add to allow the user to change the search policy (parallel search is a common variant) and there might be some special options that are useful for temporal (or spatial) reasoning tasks, which can be an interesting research topic for the future.  
 
-**getval, setval, nb_setval**: described in the global variable section 
+**getval**: retrieve the value of a global variable and unify it with a local logical variable. 
+
+**setval**: set the value of a global variable. If the rule is backtracked, then the global variable value will also be reset to its previous value (SWI-Prolog calls it b_setval). 
+
+**nb_setval**: same as setval, except that the value does not get reset during backtracking. 
 
 **is**: in standard Prolog, it is used for arithmetic operations. In Guan, since compound term can be evaluated automatically, this is typically not needed. When used, it just performs the evaluation of the second argument and unify the result with the first argument. For that purpose, the unify (“=”) predicate can also be used. 
 
