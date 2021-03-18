@@ -2,7 +2,7 @@
 
 Guan is a general-purpose logic programming system written in C# and built as a .NET Standard Library. It has been tested in both Windows and Linux environments. 
 
-Guan employs Prolog style syntax for writing logic rules. It enables easy interop between such rules with regular C# code and the vast .NET Base Class Library. External Predicates are written in C# and logic rules can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is Configuration-as-Logic (see [FabricHealer](https://github.com/microsoft/service-fabric-healer) for a concrete example of a real world application of Configuration-as-Logic ausing Guan.).
+Guan employs Prolog style syntax for writing logic rules. It enables easy interop between such rules with regular C# code and the vast .NET Base Class Library. External Predicates are written in C# and logic rules can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is [Configuration-as-Logic](https://github.com/microsoft/service-fabric-healer).
 
 Author: Lu Xun, Microsoft.
 
