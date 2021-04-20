@@ -1,4 +1,4 @@
-# Guan - Preview
+# Guan Preview
 
 Guan is a general-purpose logic programming system written in C# and built as a .NET Standard Library. It has been tested in both Windows and Linux environments. 
 
@@ -7,7 +7,7 @@ Guan employs Prolog style syntax for writing logic rules. It enables easy intero
 Author: Lu Xun, Microsoft. 
 
 ```
-Guan is currently Preview technology and is not meant for Production environments.
+This is Preview technology and is not meant for production use. Only use in Test environments.
 ```
 
 ### Syntax
