@@ -6,7 +6,9 @@ function Install-Nuget {
     $destination = "$scriptPath\nuget.exe"
 
     #Download the file
-    Invoke-WebRequest -Uri $source -OutFile $destination
+    if (-Not [System.IO.File]::Exists($destination)) {
+        Invoke-WebRequest -Uri $source -OutFile $destination
+    }
 }
 
 function Build-Nuget {
