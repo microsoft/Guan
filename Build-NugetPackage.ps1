@@ -37,7 +37,7 @@ try {
 
     Install-Nuget
 
-    Build-Nuget "Microsoft.ServiceFabricApps.Guan" "$scriptPath\Guan\bin\release\netstandard2.0"
+    Build-Nuget "Microsoft.Logic.Guan" "$scriptPath\Guan\bin\release\netstandard2.0"
 }
 finally {
 
