@@ -24,7 +24,7 @@ function Build-Nuget {
 
     [string] $nugetSpecPath = "$scriptPath\Guan\bin\release\netstandard2.0\$($packageId).nuspec"
 
-    [System.IO.File]::WriteAllText($nugetSpecPath,  $nugetSpecTemplate.Replace("%PACKAGE_ID%", $packageId).Replace("%ROOT_PATH%", $scriptPath))
+    [System.IO.File]::WriteAllText($nugetSpecPath, $nugetSpecTemplate.Replace("%PACKAGE_ID%", $packageId).Replace("%ROOT_PATH%", $scriptPath))
 
     .\nuget.exe pack $nugetSpecPath -basepath $basePath -OutputDirectory bin\release\Guan\Nugets -properties NoWarn=NU5100
 }
