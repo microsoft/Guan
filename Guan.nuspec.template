@@ -6,10 +6,10 @@
     <authors>Microsoft</authors>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <title>Guan Logic Progamming Library</title>
+    <title>Guan: General Purpose Logic Programming Library</title>
     <icon>icon.png</icon>
     <language>en-US</language>
-    <description>Guan is a general-purpose logic programming system with a C# API for external predicate implementation. It is a close approximation of Prolog, with extended capabilities and some differences.</description>
+    <description>Guan is a general purpose logic programming system with a C# API for external predicate implementation. It is a close approximation of Prolog, with extended capabilities and some differences.</description>
     <contentFiles>
       <files include="**" buildAction="None" copyToOutput="true" />
     </contentFiles>
