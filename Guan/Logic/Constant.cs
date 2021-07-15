@@ -85,28 +85,29 @@ namespace Guan.Logic
                 return Null;
             }
 
-            long longValue;
-            if (long.TryParse(text, out longValue))
+            if (long.TryParse(text, out long longValue))
             {
                 return new Constant(longValue);
             }
 
-            ulong ulongValue;
-            if (ulong.TryParse(text, out ulongValue))
+            if (ulong.TryParse(text, out ulong ulongValue))
             {
                 return new Constant(ulongValue);
             }
 
-            double doubleValue;
-            if (double.TryParse(text, out doubleValue))
+            if (double.TryParse(text, out double doubleValue))
             {
                 return new Constant(doubleValue);
             }
 
-            TimeSpan timeSpan;
-            if (TimeSpan.TryParse(text, out timeSpan))
+            if (TimeSpan.TryParse(text, out TimeSpan timeSpan))
             {
                 return new Constant(timeSpan);
+            }
+
+            if (bool.TryParse(text, out bool boolValue))
+            {
+                return new Constant(boolValue);
             }
 
             return new Constant(text);
