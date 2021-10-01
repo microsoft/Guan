@@ -9,7 +9,7 @@
     <title>Guan: Logic Programming Library for .NET</title>
     <icon>icon.png</icon>
     <language>en-US</language>
-    <description>This package contains Guan, a general purpose logic programming system written in C#. It is a close approximation of Prolog, with extended capabilities and some differences. Guan employs Prolog style syntax for writing logic rules. It enables easy interop between such rules with regular C# code and the vast .NET Base Class Library.</description>
+    <description>This package contains Guan, a general purpose logic programming system written in C#. It is a close approximation of Prolog with extended capabilities and some differences. Guan employs Prolog style syntax for writing logic rules. It enables easy interop between such rules with regular C# code and the vast .NET Base Class Library.</description>
     <contentFiles>
       <files include="**" buildAction="None" copyToOutput="true" />
     </contentFiles>

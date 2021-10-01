@@ -19,9 +19,9 @@ namespace Guan.Common
     /// </summary>
     public abstract class GuanFunc
     {
-        private string m_name;
+        private readonly string m_name;
 
-        private static object s_tableLock = new object();
+        private static readonly object s_tableLock = new object();
         private static Dictionary<string, GuanFunc> s_table = new Dictionary<string, GuanFunc>();
         private static bool ExternalResourceLoaded = false;
 
@@ -223,7 +223,7 @@ namespace Guan.Common
     /// </summary>
     public class Literal : StandaloneFunc
     {
-        private object m_value;
+        private readonly object m_value;
 
         internal static readonly Literal Empty = new Literal(null);
         internal static readonly Literal True = new Literal(true);
@@ -592,7 +592,7 @@ namespace Guan.Common
     /// </summary>
     public class MatchFunc : BinaryFunc
     {
-        private bool m_negation;
+        private readonly bool m_negation;
 
         public static readonly MatchFunc Singleton = new MatchFunc("match", false);
         public static readonly MatchFunc Not = new MatchFunc("notmatch", true);
@@ -647,8 +647,8 @@ namespace Guan.Common
     /// </summary>
     internal class PatternFunc : UnaryFunc
     {
-        private Regex m_pattern;
-        private bool m_negation;
+        private readonly Regex m_pattern;
+        private readonly bool m_negation;
 
         public PatternFunc(string pattern, bool negation)
             : base("pattern:" + pattern)
@@ -868,7 +868,7 @@ namespace Guan.Common
 
     internal class ToLowerFunc : UnaryFunc
     {
-        public static ToLowerFunc Singleton = new ToLowerFunc();
+        public static readonly ToLowerFunc Singleton = new ToLowerFunc();
 
         protected ToLowerFunc() : base("ToLower")
         {
@@ -887,7 +887,7 @@ namespace Guan.Common
 
     internal class ToUpperFunc : UnaryFunc
     {
-        public static ToUpperFunc Singleton = new ToUpperFunc();
+        public static readonly ToUpperFunc Singleton = new ToUpperFunc();
 
         protected ToUpperFunc() : base("ToUpper")
         {
@@ -906,7 +906,7 @@ namespace Guan.Common
 
     internal class ExistsFunc : GuanFunc
     {
-        public static ExistsFunc Singleton = new ExistsFunc();
+        public static readonly ExistsFunc Singleton = new ExistsFunc();
 
         private ExistsFunc() : base("Exists")
         {
@@ -921,7 +921,7 @@ namespace Guan.Common
 
     internal class NotExistsFunc : GuanFunc
     {
-        public static NotExistsFunc Singleton = new NotExistsFunc();
+        public static readonly NotExistsFunc Singleton = new NotExistsFunc();
 
         private NotExistsFunc() : base("NotExists")
         {
@@ -936,7 +936,7 @@ namespace Guan.Common
 
     internal class NotEmptyFunc : GuanFunc
     {
-        public static NotEmptyFunc Singleton = new NotEmptyFunc();
+        public static readonly NotEmptyFunc Singleton = new NotEmptyFunc();
 
         private NotEmptyFunc() : base("NotEmpty")
         {
@@ -964,7 +964,7 @@ namespace Guan.Common
 
     internal class EmptyFunc : GuanFunc
     {
-        public static EmptyFunc Singleton = new EmptyFunc();
+        public static readonly EmptyFunc Singleton = new EmptyFunc();
 
         private EmptyFunc() : base("Empty")
         {
@@ -992,7 +992,7 @@ namespace Guan.Common
 
     internal class ExpressionFunc : GuanFunc
     {
-        public static ExpressionFunc Singleton = new ExpressionFunc();
+        public static readonly ExpressionFunc Singleton = new ExpressionFunc();
 
         private ExpressionFunc() : base("expression")
         {
@@ -1004,14 +1004,15 @@ namespace Guan.Common
         }
     }
 
-    internal class TimeFunc : UnaryFunc
-    {
-        public static TimeFunc Singleton = new TimeFunc();
-
-        private TimeFunc() : base("time")
+    internal class DateTimeFunc : UnaryFunc
+    {   
+        public static readonly DateTimeFunc Singleton = new DateTimeFunc(); 
+        
+        private DateTimeFunc() : base("DateTime")
         {
-        }
 
+        }
+        
         public override object UnaryInvoke(object arg)
         {
             return DateTime.Parse((string)arg);
@@ -1020,7 +1021,7 @@ namespace Guan.Common
 
     internal class GuanTimeFunc : UnaryFunc
     {
-        public static GuanTimeFunc Singleton = new GuanTimeFunc();
+        public static readonly GuanTimeFunc Singleton = new GuanTimeFunc();
 
         private GuanTimeFunc() : base("GuanTime")
         {
@@ -1034,7 +1035,7 @@ namespace Guan.Common
 
     internal class TimeSpanFunc : UnaryFunc
     {
-        public static TimeSpanFunc Singleton = new TimeSpanFunc();
+        public static readonly TimeSpanFunc Singleton = new TimeSpanFunc();
 
         private TimeSpanFunc() : base("TimeSpan")
         {
@@ -1048,7 +1049,7 @@ namespace Guan.Common
 
     internal class IntFunc : UnaryFunc
     {
-        public static IntFunc Singleton = new IntFunc();
+        public static readonly IntFunc Singleton = new IntFunc();
 
         private IntFunc() : base("int")
         {
@@ -1062,7 +1063,7 @@ namespace Guan.Common
 
     internal class LongFunc : UnaryFunc
     {
-        public static LongFunc Singleton = new LongFunc();
+        public static readonly LongFunc Singleton = new LongFunc();
 
         private LongFunc() : base("long")
         {
@@ -1076,7 +1077,7 @@ namespace Guan.Common
 
     internal class DoubleFunc : UnaryFunc
     {
-        public static DoubleFunc Singleton = new DoubleFunc();
+        public static readonly DoubleFunc Singleton = new DoubleFunc();
 
         private DoubleFunc() : base("double")
         {
@@ -1088,9 +1089,34 @@ namespace Guan.Common
         }
     }
 
+    internal class TimeFunc : StandaloneFunc
+    {
+        public static readonly TimeFunc Singleton = new TimeFunc();
+
+        private TimeFunc() : base("time")
+        {
+
+        }
+
+        public override object Invoke(object[] args)
+        {
+            if (args.Length > 1)
+            {
+                throw new ArgumentException("Time() does not take more than one argument");
+            }
+
+            if (args.Length == 0)
+            {
+                return DateTime.UtcNow;
+            }
+
+            return DateTime.UtcNow + (TimeSpan)args[0];
+        }
+    }
+
     internal class ListFunc : StandaloneFunc
     {
-        public static ListFunc Singleton = new ListFunc();
+        public static readonly ListFunc Singleton = new ListFunc();
 
         private ListFunc() : base("List")
         {
@@ -1112,8 +1138,7 @@ namespace Guan.Common
     {
         public static MinMaxFunc Min = new MinMaxFunc("min");
         public static MinMaxFunc Max = new MinMaxFunc("max");
-
-        private ComparisonFunc func_;
+        private readonly ComparisonFunc func_;
 
         private MinMaxFunc(string name) : base(name)
         {
