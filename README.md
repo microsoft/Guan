@@ -40,9 +40,11 @@ As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/i
 
 ```Prolog
 mygoal :- body 
-
+```
+```Prolog
 mygoal(v1=?v1, v2=?v2) :- body 
-
+```
+```Prolog
 mygoal(v1=?v1) :- body 
 ```
 
