@@ -1,8 +1,6 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
     /// <summary>
@@ -10,13 +8,14 @@ namespace Guan.Logic
     /// </summary>
     public class ArgumentDescription
     {
-        public string Text;
-        public bool Required;
-
         public ArgumentDescription(string text, bool required)
         {
-            Text = text;
-            Required = required;
+            this.Text = text;
+            this.Required = required;
         }
+
+        public string Text { get; set; }
+
+        public bool Required { get; set; }
     }
 }

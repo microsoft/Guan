@@ -1,123 +1,122 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System;
-using System.Threading;
-using System.Collections.Generic;
-using Guan.Common;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+
     /// <summary>
     /// The collection of variables for a given rule at runtime.
     /// </summary>
-    public class VariableBinding
+    internal class VariableBinding
     {
+        internal static readonly VariableBinding Ground = new VariableBinding(new VariableTable(), 0, 0);
+
+        private static long seqGenerator = 0;
+
         /// <summary>
         /// Local variables as defined in the rule.
         /// </summary>
-        private Variable[] local_;
+        private Variable[] local;
 
         /// <summary>
         /// Variables returned to the caller.
         /// </summary>
-        private List<OutputVariable> output_;
+        private List<OutputVariable> output;
 
         /// <summary>
         /// Variables returned from the goals.
         /// </summary>
-        private List<LinkedVariable> foreign_;
+        private List<LinkedVariable> foreign;
 
         /// <summary>
         /// The start offset of foreign variable for each goal.
         /// </summary>
-        private int[] offsets_;
+        private int[] offsets;
 
-        private int currentIndex_;
-        private int[] sequences_;
-        private int count_;
-        private int level_;
-        private long seq_;
-
-        private static long Seq = 0;
-
-        internal static readonly VariableBinding Ground = new VariableBinding(new VariableTable(), 0, 0);
+        private int currentIndex;
+        private int[] sequences;
+        private int count;
+        private int level;
+        private long seq;
 
         public VariableBinding(VariableTable variableTable, int goalCount, int level)
         {
-            level_ = level;
-            seq_ = Interlocked.Increment(ref Seq);
+            this.level = level;
+            this.seq = Interlocked.Increment(ref seqGenerator);
 
-            local_ = new Variable[variableTable.Count];
+            this.local = new Variable[variableTable.Count];
             for (int i = 0; i < variableTable.Count; i++)
             {
-                local_[i] = new Variable(variableTable[i], this);
+                this.local[i] = new Variable(variableTable[i], this);
             }
 
-            output_ = new List<OutputVariable>();
+            this.output = new List<OutputVariable>();
 
-            count_ = 0;
-            foreign_ = new List<LinkedVariable>(goalCount);
-            offsets_ = new int[goalCount];
-            sequences_ = new int[goalCount];
+            this.count = 0;
+            this.foreign = new List<LinkedVariable>(goalCount);
+            this.offsets = new int[goalCount];
+            this.sequences = new int[goalCount];
             for (int i = 0; i < goalCount; i++)
             {
-                offsets_[i] = 0;
-                sequences_[i] = 0;
+                this.offsets[i] = 0;
+                this.sequences[i] = 0;
             }
 
-            currentIndex_ = -1;
+            this.currentIndex = -1;
         }
 
         public VariableBinding(VariableBinding other)
         {
-            seq_ = Interlocked.Increment(ref Seq);
-            level_ = other.level_;
-            currentIndex_ = other.currentIndex_;
-            count_ = other.count_;
+            this.seq = Interlocked.Increment(ref seqGenerator);
+            this.level = other.level;
+            this.currentIndex = other.currentIndex;
+            this.count = other.count;
 
             Dictionary<Variable, Variable> mapping = new Dictionary<Variable, Variable>();
 
-            local_ = new Variable[other.local_.Length];
-            for (int i = 0; i < local_.Length; i++)
+            this.local = new Variable[other.local.Length];
+            for (int i = 0; i < this.local.Length; i++)
             {
-                local_[i] = new Variable(other.local_[i], this);
-                mapping.Add(other.local_[i], local_[i]);
+                this.local[i] = new Variable(other.local[i], this);
+                mapping.Add(other.local[i], this.local[i]);
             }
 
-            output_ = new List<OutputVariable>(other.output_.Count);
-            foreach (OutputVariable outputVariable in other.output_)
+            this.output = new List<OutputVariable>(other.output.Count);
+            foreach (OutputVariable outputVariable in other.output)
             {
-                output_.Add(new OutputVariable(outputVariable, this));
-                mapping.Add(outputVariable, output_[output_.Count - 1]);
+                this.output.Add(new OutputVariable(outputVariable, this));
+                mapping.Add(outputVariable, this.output[this.output.Count - 1]);
             }
 
-            foreign_ = new List<LinkedVariable>(other.count_);
-            for (int i = 0; i < other.count_; i++)
+            this.foreign = new List<LinkedVariable>(other.count);
+            for (int i = 0; i < other.count; i++)
             {
-                foreign_.Add(new LinkedVariable(other.foreign_[i], this));
-                mapping.Add(other.foreign_[i], foreign_[foreign_.Count - 1]);
+                this.foreign.Add(new LinkedVariable(other.foreign[i], this));
+                mapping.Add(other.foreign[i], this.foreign[this.foreign.Count - 1]);
             }
 
-            offsets_ = new int[other.offsets_.Length];
-            sequences_ = new int[other.sequences_.Length];
-            for (int i = 0; i < other.offsets_.Length; i++)
+            this.offsets = new int[other.offsets.Length];
+            this.sequences = new int[other.sequences.Length];
+            for (int i = 0; i < other.offsets.Length; i++)
             {
-                offsets_[i] = other.offsets_[i];
-                sequences_[i] = other.sequences_[i];
+                this.offsets[i] = other.offsets[i];
+                this.sequences[i] = other.sequences[i];
             }
 
-            foreach (Variable variable in local_)
+            foreach (Variable variable in this.local)
             {
                 variable.UpdateValueBinding(mapping, other);
             }
-            foreach (Variable variable in output_)
+
+            foreach (Variable variable in this.output)
             {
                 variable.UpdateValueBinding(mapping, other);
             }
-            foreach (Variable variable in foreign_)
+
+            foreach (Variable variable in this.foreign)
             {
                 variable.UpdateValueBinding(mapping, other);
             }
@@ -127,7 +126,7 @@ namespace Guan.Logic
         {
             get
             {
-                return level_;
+                return this.level;
             }
         }
 
@@ -135,7 +134,7 @@ namespace Guan.Logic
         {
             get
             {
-                return currentIndex_;
+                return this.currentIndex;
             }
         }
 
@@ -143,25 +142,20 @@ namespace Guan.Logic
         {
             get
             {
-                return (currentIndex_ < 0 ? 0 : sequences_[currentIndex_]);
+                return (this.currentIndex < 0 ? 0 : this.sequences[this.currentIndex]);
             }
-        }
-
-        internal bool IsValid(int index, int sequence)
-        {
-            return (index < 0 || (index <= currentIndex_ && sequences_[index] == sequence));
         }
 
         public Variable GetLocalVariable(int index)
         {
-            return local_[index];
+            return this.local[index];
         }
 
         public OutputVariable AddOutputVariable(Variable original)
         {
-            ReleaseAssert.IsTrue(currentIndex_ == -1);
+            ReleaseAssert.IsTrue(this.currentIndex == -1);
 
-            foreach (OutputVariable existing in output_)
+            foreach (OutputVariable existing in this.output)
             {
                 if (existing.Original == original)
                 {
@@ -169,8 +163,8 @@ namespace Guan.Logic
                 }
             }
 
-            OutputVariable result = new OutputVariable(this, original, "$" + output_.Count.ToString());
-            output_.Add(result);
+            OutputVariable result = new OutputVariable(this, original, "$" + this.output.Count.ToString());
+            this.output.Add(result);
 
             return result;
         }
@@ -178,67 +172,67 @@ namespace Guan.Logic
         public LinkedVariable AddForeignVariable(Variable original)
         {
             LinkedVariable result;
-            for (int i = offsets_[currentIndex_]; i < count_; i++)
+            for (int i = this.offsets[this.currentIndex]; i < this.count; i++)
             {
-                if (foreign_[i].Original == original)
+                if (this.foreign[i].Original == original)
                 {
-                    return foreign_[i];
+                    return this.foreign[i];
                 }
             }
 
-            if (count_ < foreign_.Count)
+            if (this.count < this.foreign.Count)
             {
-                result = foreign_[count_];
+                result = this.foreign[this.count];
                 result.Original = original;
                 result.Reset();
             }
             else
             {
-                result = new LinkedVariable(this, original, foreign_.Count.ToString() + "$");
-                foreign_.Add(result);
+                result = new LinkedVariable(this, original, this.foreign.Count.ToString() + "$");
+                this.foreign.Add(result);
             }
 
-            count_++;
+            this.count++;
             return result;
         }
 
         public void MoveNext()
         {
-            currentIndex_++;
-            if (currentIndex_ < offsets_.Length)
+            this.currentIndex++;
+            if (this.currentIndex < this.offsets.Length)
             {
-                offsets_[currentIndex_] = count_;
-                sequences_[currentIndex_]++;
+                this.offsets[this.currentIndex] = this.count;
+                this.sequences[this.currentIndex]++;
             }
         }
 
         public bool MovePrev()
         {
-            if (currentIndex_ == 0)
+            if (this.currentIndex == 0)
             {
                 return false;
             }
 
-            if (currentIndex_ < offsets_.Length)
+            if (this.currentIndex < this.offsets.Length)
             {
-                count_ = offsets_[currentIndex_];
+                this.count = this.offsets[this.currentIndex];
             }
 
-            currentIndex_--;
-            sequences_[currentIndex_]++;
+            this.currentIndex--;
+            this.sequences[this.currentIndex]++;
 
             return true;
         }
 
         public UnificationResult CreateOutput()
         {
-            if (output_.Count == 0)
+            if (this.output.Count == 0)
             {
                 return UnificationResult.Empty;
             }
 
-            UnificationResult result = new UnificationResult(output_.Count);
-            foreach (OutputVariable entry in output_)
+            UnificationResult result = new UnificationResult(this.output.Count);
+            foreach (OutputVariable entry in this.output)
             {
                 if (entry.GetBoundTerm() != null)
                 {
@@ -259,7 +253,7 @@ namespace Guan.Logic
             if (var2 != null && var2.Binding != this)
             {
                 // The output variable might already be bound, so refreshing the values
-                term2 = AddOutputVariable(var2).GetEffectiveTerm();
+                term2 = this.AddOutputVariable(var2).GetEffectiveTerm();
                 var2 = term2 as Variable;
             }
 
@@ -307,81 +301,45 @@ namespace Guan.Logic
             // compound/constant is not currently being unified until we find a use case for it.
             Constant constant1 = term1 as Constant;
             Constant constant2 = term2 as Constant;
+            if (constant2 != null)
+            {
+                return (constant1 != null && object.Equals(constant1.Value, constant2.Value));
+            }
+
+            compound2 = (CompoundTerm)term2;
             if (constant1 != null)
             {
-                // If both are constants, unify if the two are equal.
-                if (constant2 != null)
-                {
-                    return object.Equals(constant1.Value, constant2.Value);
-                }
-
-                // Try to unify as compound
-                ObjectCompundTerm objectCompundTerm = ObjectCompundTerm.Create(constant1.Value);
-                if (objectCompundTerm == null)
+                compound1 = ObjectCompundTerm.Create(constant1.Value);
+                if (compound1 == null)
                 {
                     return false;
                 }
-
-                compound2 = (CompoundTerm)term2;
-                if (compound2.Functor != Functor.ClassObject)
-                {
-                    // Check whether class name (including base classes) matches input compound functor name
-                    Type type = objectCompundTerm.ObjectType;
-                    bool found = false;
-                    while (!found)
-                    {
-                        if (type.Name == compound2.Functor.Name || type.FullName == compound2.Functor.Name)
-                        {
-                            found = true;
-                        }
-                        else
-                        {
-                            type = type.BaseType;
-                            if (type == null)
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
-
-                compound1 = objectCompundTerm;
             }
             else
             {
-                if (constant2 != null)
-                {
-                    return false;
-                }
-
                 compound1 = (CompoundTerm)term1;
-                compound2 = (CompoundTerm)term2;
-                if (!compound1.Functor.Unify(compound2.Functor))
-                {
-                    return false;
-                }
+            }
 
-                // If local contains effective type argument, unify it with the input functor name.
-                Term arg1 = compound1.GetEffetiveType();
-                if (arg1 != null && compound2.GetEffetiveType() == null && !Unify(arg1, new Constant(compound2.Functor.Name)))
-                {
-                    return false;
-                }
-
-                // If local contains "this" argument, unify it with the entire input term.
-                arg1 = compound1.GetArgument("this");
-                if (arg1 != null && compound2.IsGround() && !Unify(arg1, compound2))
-                {
-                    return false;
-                }
+            if (!UnifyFunctor(compound1, compound2))
+            {
+                return false;
             }
 
             // Unify every argument of input
-            foreach (var arg2 in compound2.GetUnificationArgument())
+            foreach (TermArgument arg2 in compound2.GetUnificationArgument())
             {
                 // Only unify when an argument is present on both sides
-                Term arg1 = (arg2.Name == "this" ? compound1 : compound1.GetArgument(arg2.Name));
-                if (arg1 != null && !Unify(arg1, arg2.Value))
+                Term arg1;
+                if (arg2.Name == "this")
+                {
+                    arg1 = term1;
+                }
+                else
+                {
+                    arg1 = compound1[arg2.Name] as Term;
+                }
+
+                if (arg1 != null && !this.Unify(arg1, arg2.Value))
                 {
                     return false;
                 }
@@ -396,49 +354,114 @@ namespace Guan.Logic
         public void ResetTail()
         {
             // These variables won't backtrack so assign -1 as their index.
-            foreach (var variable in local_)
+            foreach (Variable variable in this.local)
             {
-                variable.Promote();
+                _ = variable.Promote();
             }
 
-            foreach (var variable in output_)
+            foreach (OutputVariable variable in this.output)
             {
-                variable.Promote();
+                _ = variable.Promote();
             }
 
             // Retain the foreign variables that have not been instantiated. For those that
             // have already been instantiated, we don't need to keep track of them explicitly
             // in the binding: C# memory management can automatically takes care of them.
-            List<LinkedVariable> foreign = new List<LinkedVariable>(foreign_.Count);
-            for (int i = 0; i < count_; i++)
+            List<LinkedVariable> foreign = new List<LinkedVariable>(this.foreign.Count);
+            for (int i = 0; i < this.count; i++)
             {
-                if (!foreign_[i].Promote())
+                if (!this.foreign[i].Promote())
                 {
-                    foreign.Add(foreign_[i]);
+                    foreign.Add(this.foreign[i]);
                 }
             }
 
-            foreign_ = foreign;
-            count_ = foreign_.Count;
-            currentIndex_ = 0;
+            this.foreign = foreign;
+            this.count = this.foreign.Count;
+            this.currentIndex = 0;
         }
 
         public void ResetOutput()
         {
-            output_.Clear();
+            this.output.Clear();
         }
 
         public void ResetLast()
         {
-            if (currentIndex_ >= 0)
+            if (this.currentIndex >= 0)
             {
-                sequences_[currentIndex_]++;
+                this.sequences[this.currentIndex]++;
             }
+        }
+
+        public bool SetLocalVariableValue(string name, Term value)
+        {
+            for (int i = 0; i < this.local.Length; i++)
+            {
+                if (this.local[i].Name == name)
+                {
+                    this.local[i].SetValue(value);
+                }
+            }
+
+            return false;
         }
 
         public override string ToString()
         {
-            return seq_.ToString();
+            return this.seq.ToString();
+        }
+
+        internal bool IsValid(int index, int sequence)
+        {
+            return (index < 0 || (index <= this.currentIndex && this.sequences[index] == sequence));
+        }
+
+        private static bool UnifyFunctor(CompoundTerm term1, CompoundTerm term2)
+        {
+            (string name1, Type type1) = GetFunctorType(term1);
+            (string name2, Type type2) = GetFunctorType(term2);
+            if (type1 == null && type2 == null)
+            {
+                return (name1 == name2);
+            }
+            else if (type1 != null && type2 != null)
+            {
+                return type1.IsAssignableFrom(type2) || type2.IsAssignableFrom(type1);
+            }
+            else if (type1 == null)
+            {
+                type1 = type2;
+                name2 = name1;
+            }
+
+            if (type1 == typeof(ObjectCompundTerm) || name2 == Functor.ClassObject.Name)
+            {
+                return true;
+            }
+
+            while (type1 != null)
+            {
+                if (type1.Name == name2 || type1.FullName == name2)
+                {
+                    return true;
+                }
+
+                type1 = type1.BaseType;
+            }
+
+            return false;
+        }
+
+        private static (string, Type) GetFunctorType(CompoundTerm term)
+        {
+            Term arg = term.GetArgument(CompoundTerm.EffectiveTypeArgumentName);
+            if (arg != null)
+            {
+                return (arg.GetStringValue(), null);
+            }
+
+            return (term.Functor.Name, term.Functor.UnificationType);
         }
     }
 }

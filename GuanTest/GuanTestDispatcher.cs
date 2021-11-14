@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
-using Guan.Common;
 using Guan.Logic;
 
 namespace GuanTest

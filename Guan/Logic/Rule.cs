@@ -1,47 +1,45 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Guan.Common;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text.RegularExpressions;
+
     /// <summary>
     /// Rule which contains a head and an optional body.
     /// Parsing of a rule goes through the following steps:
     /// 1. Parse the TermExpression into compound term.
     /// 2. Break the compound term into head and bodies.
     /// 3. For head and each goal, resolve the corresponding predicate type
-    /// 4. For every compound term, resolve the corresponding functor if there is one 
+    /// 4. For every compound term, resolve the corresponding functor if there is one
     /// 5. Invoke PostProcessing on each head & goal, which includes handling
     ///    argument name and variables, plus type-specific posting processing.
     /// </summary>
     public class Rule
     {
-        private string text_;
-        private CompoundTerm head_;
-        private List<CompoundTerm> goals_;
-        private VariableTable variableTable_;
-
         private static readonly Regex VariablePattern = new Regex(@"^\?[_\w]+$", RegexOptions.Compiled);
-        private static readonly Regex ArgumentNamePattern = new Regex(@"^[_\w]+$", RegexOptions.Compiled);
+        private static readonly Regex ArgumentNamePattern = new Regex(@"^[_\.\w]+$", RegexOptions.Compiled);
+
+        private string text;
+        private CompoundTerm head;
+        private List<CompoundTerm> goals;
+        private VariableTable variableTable;
 
         internal Rule(string text, CompoundTerm head, List<CompoundTerm> goals, VariableTable variableTable)
         {
-            text_ = text;
-            head_ = head;
-            goals_ = goals;
-            variableTable_ = variableTable;
+            this.text = text;
+            this.head = head;
+            this.goals = goals;
+            this.variableTable = variableTable;
         }
 
         public CompoundTerm Head
         {
             get
             {
-                return head_;
+                return this.head;
             }
         }
 
@@ -49,7 +47,7 @@ namespace Guan.Logic
         {
             get
             {
-                return goals_;
+                return this.goals;
             }
         }
 
@@ -57,32 +55,25 @@ namespace Guan.Logic
         {
             get
             {
-                return variableTable_;
+                return this.variableTable;
             }
+        }
+
+        public static Rule Parse(string text)
+        {
+            return Parse(ToGoal(TermExpression.Parse(text)), text);
         }
 
         public void AddArgument(CompoundTerm term, string argument, string name)
         {
             Term arg = TermExpression.Parse(argument);
             term.AddArgument(arg, name);
-            ProcessCompoundTerm(term, variableTable_, 0);
+            ProcessCompoundTerm(term, this.variableTable, 0);
         }
 
-        internal void PostProcessing()
+        public override string ToString()
         {
-            foreach (CompoundTerm goal in goals_)
-            {
-                ProcessCompoundTerm(goal, variableTable_, 0);
-                goal.PostProcessing(this);
-            }
-
-            ProcessCompoundTerm(head_, variableTable_, 0);
-            head_.PostProcessing(this);
-        }
-
-        public static Rule Parse(string text)
-        {
-            return Parse(ToGoal(TermExpression.Parse(text)), text);
+            return this.text;
         }
 
         internal static Rule Parse(CompoundTerm rule, string text)
@@ -105,7 +96,6 @@ namespace Guan.Logic
                     }
 
                     CompoundTerm body = ToGoal(rule.Arguments[1].Value);
-                    
                     if (body == null)
                     {
                         throw new GuanException("Invalid body in rule {0}", text);
@@ -123,17 +113,37 @@ namespace Guan.Logic
             return new Rule(text, head, goals, new VariableTable());
         }
 
+        internal void PostProcessing()
+        {
+            foreach (CompoundTerm goal in this.goals)
+            {
+                ProcessCompoundTerm(goal, this.variableTable, 0);
+                goal.PostProcessing(this);
+            }
+
+            ProcessCompoundTerm(this.head, this.variableTable, 0);
+            this.head.PostProcessing(this);
+        }
+
+        internal void ProcessMetaDataHead()
+        {
+            ProcessCompoundTerm(this.head, null, 0);
+        }
+
+        internal VariableBinding CreateBinding(int level)
+        {
+            return new VariableBinding(this.variableTable, this.goals.Count, level);
+        }
+
         private static CompoundTerm ToGoal(Term term)
         {
             CompoundTerm result = term as CompoundTerm;
-
             if (result != null)
             {
                 return result;
             }
 
             string name = term.GetStringValue();
-
             if (name == null)
             {
                 return null;
@@ -169,14 +179,22 @@ namespace Guan.Logic
             }
 
             PredicateType predicateType = goal.Functor as PredicateType;
-            bool positional = (predicateType == null || predicateType.AllowPositionalArgument);
+            int minPositional = (predicateType != null ? predicateType.MinPositionalArgument : 0);
+            int maxPositional = (predicateType != null ? predicateType.MaxPositionalArgument : int.MaxValue);
+            bool positional = (maxPositional > 0);
+
+            if (goal.Arguments.Count < minPositional)
+            {
+                throw new GuanException("Predicate {0} must have at leaat {1} argument(s)", goal, minPositional);
+            }
+
             for (int i = 0; i < goal.Arguments.Count; i++)
             {
                 bool nameOverride = false;
                 CompoundTerm compound = goal.Arguments[i].Value as CompoundTerm;
                 if (level > 0 && compound != null && compound.Functor.Name == "=")
                 {
-                    ReleaseAssert.IsTrue(compound.Arguments.Count == 2);
+                    ReleaseAssert.IsTrue(compound.Arguments.Count == 2 && i >= minPositional);
                     string name = compound.Arguments[0].Value.GetStringValue();
                     if (name == null || !ArgumentNamePattern.IsMatch(name))
                     {
@@ -187,9 +205,17 @@ namespace Guan.Logic
                     goal.Arguments[i] = new TermArgument(name, compound.Arguments[1].Value, goal.Functor.GetArgumentDescription(name));
                     compound = goal.Arguments[i].Value as CompoundTerm;
                 }
-                else if (!positional)
+                else
                 {
-                    nameOverride = true;
+                    if (i >= maxPositional)
+                    {
+                        positional = false;
+                    }
+
+                    if (!positional)
+                    {
+                        nameOverride = true;
+                    }
                 }
 
                 if (compound != null)
@@ -238,20 +264,10 @@ namespace Guan.Logic
                     }
                     else if (nameOverride)
                     {
-                        goal.Arguments[i] = new TermArgument(constantValue, Constant.Null, goal.Functor.GetArgumentDescription(constantValue));
+                        goal.Arguments[i] = new TermArgument(constantValue, Constant.True, goal.Functor.GetArgumentDescription(constantValue));
                     }
                 }
             }
-        }
-
-        internal VariableBinding CreateBinding(int level)
-        {
-            return new VariableBinding(variableTable_, goals_.Count, level);
-        }
-
-        public override string ToString()
-        {
-            return text_;
         }
     }
 }

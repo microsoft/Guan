@@ -1,16 +1,13 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Guan.Common;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Context to provide the following during rule execution:
     /// 1. The asserted predicates.
@@ -21,136 +18,71 @@ namespace Guan.Logic
     /// </summary>
     public class QueryContext : IPropertyContext, IWritablePropertyContext
     {
-        private QueryContext parent_;
-        private List<QueryContext> children_;
-        private QueryContext root_;
-        private string orderProperty_;
-        private ResolveOrder order_;
-        private Dictionary<string, object> variables_;
-        private Module asserted_;
-        private bool isLocalStable_;
-        private bool isStable_;
-        private bool isLocalSuspended_;
-        private bool isSuspended_;
-        private bool isCancelled_;
-        private bool enableTrace_;
-        private bool enableDebug_;
-        private List<IWaitingTask> waiting_;
-        private long seq_;
+        private static long seqGenerator = 0;
 
-        public event EventHandler Suspended;
-        public event EventHandler Resumed;
-
-        private static long Seq = 0;
+        private QueryContext parent;
+        private List<QueryContext> children;
+        private QueryContext root;
+        private string orderProperty;
+        private ResolveOrder order;
+        private Dictionary<string, object> variables;
+        private Module asserted;
+        private bool isLocalStable;
+        private bool isStable;
+        private bool isLocalSuspended;
+        private bool isSuspended;
+        private bool isCancelled;
+        private bool enableTrace;
+        private bool enableDebug;
+        private List<IWaitingTask> waiting;
+        private long seq;
 
         public QueryContext()
         {
-            seq_ = Interlocked.Increment(ref Seq);
-            root_ = this;
-            order_ = ResolveOrder.None;
-            variables_ = new Dictionary<string, object>();
-            asserted_ = new Module("asserted");
-            isStable_ = isLocalStable_ = false;
-            isSuspended_ = isLocalSuspended_ = false;
-            isCancelled_ = false;
-            enableTrace_ = false;
-            enableDebug_ = false;
-            waiting_ = new List<IWaitingTask>();
+            this.seq = Interlocked.Increment(ref seqGenerator);
+            this.root = this;
+            this.order = ResolveOrder.None;
+            this.variables = new Dictionary<string, object>();
+            this.asserted = new Module("asserted");
+            this.isStable = this.isLocalStable = false;
+            this.isSuspended = this.isLocalSuspended = false;
+            this.isCancelled = false;
+            this.enableTrace = false;
+            this.enableDebug = false;
+            this.waiting = new List<IWaitingTask>();
         }
 
         protected QueryContext(QueryContext parent)
         {
-            seq_ = Interlocked.Increment(ref Seq);
-            parent_ = parent;
-            root_ = parent.root_;
-            orderProperty_ = parent.orderProperty_;
-            asserted_ = parent.asserted_;
-            order_ = parent.order_;
-            variables_ = parent.variables_;
-            isStable_ = isLocalStable_ = false;
-            isSuspended_ = isLocalSuspended_ = false;
-            isCancelled_ = false;
-            enableTrace_ = parent.enableTrace_;
-            enableDebug_ = parent.enableDebug_;
-            waiting_ = parent.waiting_;
-            lock (root_)
+            this.seq = Interlocked.Increment(ref seqGenerator);
+            this.parent = parent;
+            this.root = parent.root;
+            this.orderProperty = parent.orderProperty;
+            this.asserted = parent.asserted;
+            this.order = parent.order;
+            this.variables = parent.variables;
+            this.isStable = this.isLocalStable = false;
+            this.isSuspended = this.isLocalSuspended = false;
+            this.isCancelled = false;
+            this.enableTrace = parent.enableTrace;
+            this.enableDebug = parent.enableDebug;
+            this.waiting = parent.waiting;
+            lock (this.root)
             {
-                SetStable(false);
-                parent_.AddChild(this);
+                this.SetStable(false);
+                this.parent.AddChild(this);
             }
         }
 
-        internal virtual QueryContext CreateChild()
-        {
-            return new QueryContext(this);
-        }
+        public event EventHandler Suspended;
 
-        private void AddChild(QueryContext child)
-        {
-            if (children_ == null)
-            {
-                children_ = new List<QueryContext>();
-            }
-
-            children_.Add(child);
-        }
-
-        internal void ClearChildren()
-        {
-            lock (root_)
-            {
-                if (children_ != null)
-                {
-                    children_.Clear();
-                }
-                isStable_ = isLocalStable_;
-            }
-        }
-
-        public void SetDirection(string directionProperty, ResolveOrder direction)
-        {
-            orderProperty_ = directionProperty;
-            order_ = direction;
-        }
-
-        public virtual object this[string name]
-        {
-            get
-            {
-                if (name == "Order")
-                {
-                    return order_;
-                }
-
-                object result;
-                variables_.TryGetValue(name, out result);
-                return result;
-            }
-            set
-            {
-                if (name == "Order")
-                {
-                    if (value is ResolveOrder)
-                    {
-                        order_ = (ResolveOrder)value;
-                    }
-                    else
-                    {
-                        order_ = (ResolveOrder)Enum.Parse(typeof(ResolveOrder), (string)value);
-                    }
-                }
-                else
-                {
-                    variables_[name] = value;
-                }
-            }
-        }
+        public event EventHandler Resumed;
 
         public string OrderProperty
         {
             get
             {
-                return orderProperty_;
+                return this.orderProperty;
             }
         }
 
@@ -158,7 +90,39 @@ namespace Guan.Logic
         {
             get
             {
-                return order_;
+                return this.order;
+            }
+        }
+
+        public bool IsCancelled
+        {
+            get
+            {
+                return this.isCancelled;
+            }
+
+            set
+            {
+                Queue<QueryContext> queue = new Queue<QueryContext>();
+                queue.Enqueue(this);
+
+                while (queue.Count > 0)
+                {
+                    QueryContext context = queue.Dequeue();
+                    if (!context.IsCancelled)
+                    {
+                        context.isCancelled = true;
+                        context.isSuspended = true;
+
+                        if (context.children != null)
+                        {
+                            foreach (QueryContext child in context.children)
+                            {
+                                queue.Enqueue(child);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -176,13 +140,14 @@ namespace Guan.Logic
         {
             get
             {
-                return isStable_;
+                return this.isStable;
             }
+
             set
             {
-                lock (root_)
+                lock (this.root)
                 {
-                    SetStable(value);
+                    this.SetStable(value);
                 }
             }
         }
@@ -196,12 +161,13 @@ namespace Guan.Logic
         {
             get
             {
-                return isSuspended_;
+                return this.isSuspended;
             }
+
             set
             {
-                isLocalSuspended_ = value;
-                UpdateSuspended(parent_ != null ? parent_.isSuspended_ : false);
+                this.isLocalSuspended = value;
+                this.UpdateSuspended(this.parent != null ? this.parent.isSuspended : false);
             }
         }
 
@@ -209,11 +175,12 @@ namespace Guan.Logic
         {
             get
             {
-                return enableTrace_;
+                return this.enableTrace;
             }
+
             set
             {
-                enableTrace_ = value;
+                this.enableTrace = value;
             }
         }
 
@@ -221,134 +188,173 @@ namespace Guan.Logic
         {
             get
             {
-                return enableDebug_ || enableTrace_;
+                return this.enableDebug || this.enableTrace;
             }
+
             set
             {
-                enableDebug_ = value;
+                this.enableDebug = value;
             }
         }
 
-        public bool IsCancelled
+        public virtual object this[string name]
         {
             get
             {
-                return isCancelled_;
+                if (name == "Order")
+                {
+                    return this.order;
+                }
+
+                object result;
+                _ = this.variables.TryGetValue(name, out result);
+                return result;
             }
+
             set
             {
-                Queue<QueryContext> queue = new Queue<QueryContext>();
-                queue.Enqueue(this);
-
-                while (queue.Count > 0)
+                if (name == "Order")
                 {
-                    QueryContext context = queue.Dequeue();
-                    if (!context.IsCancelled)
+                    if (value is ResolveOrder)
                     {
-                        context.isCancelled_ = true;
-                        context.isSuspended_ = true;
-
-                        if (context.children_ != null)
-                        {
-                            foreach (QueryContext child in context.children_)
-                            {
-                                queue.Enqueue(child);
-                            }
-                        }
+                        this.order = (ResolveOrder)value;
+                    }
+                    else
+                    {
+                        this.order = (ResolveOrder)Enum.Parse(typeof(ResolveOrder), (string)value);
                     }
                 }
-            }
-        }
-
-        private void SetStable(bool value)
-        {
-            isLocalStable_ = value;
-            QueryContext context = this;
-            bool updated;
-            do
-            {
-                updated = context.UpdateStable();
-                context = context.parent_;
-            } while (context != null && updated);
-
-            if (root_.isStable_)
-            {
-                root_.Start();
-            }
-        }
-
-        private bool UpdateStable()
-        {
-            bool result = isLocalStable_;
-            for (int i = 0; result && children_ != null && i < children_.Count; i++)
-            {
-                result = children_[i].isStable_;
-            }
-
-            if (result == isStable_)
-            {
-                return false;
-            }
-
-            isStable_ = result;
-            return true;
-        }
-
-        private void UpdateSuspended(bool value)
-        {
-            bool newValue = (value || isLocalSuspended_);
-            if (newValue == isSuspended_)
-            {
-                return;
-            }
-
-            isSuspended_ = newValue;
-            if (children_ != null)
-            {
-                foreach (QueryContext child in children_)
+                else
                 {
-                    child.UpdateSuspended(isSuspended_);
+                    this.variables[name] = value;
                 }
             }
+        }
 
-            if (isSuspended_)
+        public void SetDirection(string directionProperty, ResolveOrder direction)
+        {
+            this.orderProperty = directionProperty;
+            this.order = direction;
+        }
+
+        public override string ToString()
+        {
+            return this.seq.ToString();
+        }
+
+        internal virtual QueryContext CreateChild()
+        {
+            return new QueryContext(this);
+        }
+
+        internal void ClearChildren()
+        {
+            lock (this.root)
             {
-                Suspended?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                Resumed?.Invoke(this, EventArgs.Empty);
+                if (this.children != null)
+                {
+                    this.children.Clear();
+                }
+
+                this.isStable = this.isLocalStable;
             }
         }
 
         internal void Assert(CompoundTerm term, bool append)
         {
-            asserted_.Add(term, append);
+            this.asserted.Add(term, append);
         }
 
         internal PredicateType GetAssertedPredicateType(string name)
         {
-            return asserted_.GetPredicateType(name);
+            return this.asserted.GetPredicateType(name);
         }
 
         internal void AddWaiting(IWaitingTask suspended)
         {
-            waiting_.Add(suspended);
+            this.waiting.Add(suspended);
+        }
+
+        private void AddChild(QueryContext child)
+        {
+            if (this.children == null)
+            {
+                this.children = new List<QueryContext>();
+            }
+
+            this.children.Add(child);
+        }
+
+        private void SetStable(bool value)
+        {
+            this.isLocalStable = value;
+            QueryContext context = this;
+            bool updated;
+            do
+            {
+                updated = context.UpdateStable();
+                context = context.parent;
+            }
+            while (context != null && updated);
+
+            if (this.root.isStable)
+            {
+                this.root.Start();
+            }
+        }
+
+        private bool UpdateStable()
+        {
+            bool result = this.isLocalStable;
+            for (int i = 0; result && this.children != null && i < this.children.Count; i++)
+            {
+                result = this.children[i].isStable;
+            }
+
+            if (result == this.isStable)
+            {
+                return false;
+            }
+
+            this.isStable = result;
+            return true;
+        }
+
+        private void UpdateSuspended(bool value)
+        {
+            bool newValue = (value || this.isLocalSuspended);
+            if (newValue == this.isSuspended)
+            {
+                return;
+            }
+
+            this.isSuspended = newValue;
+            if (this.children != null)
+            {
+                foreach (QueryContext child in this.children)
+                {
+                    child.UpdateSuspended(this.isSuspended);
+                }
+            }
+
+            if (this.isSuspended)
+            {
+                this.Suspended?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                this.Resumed?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private void Start()
         {
-            foreach (IWaitingTask suspended in waiting_)
+            foreach (IWaitingTask suspended in this.waiting)
             {
-                Task.Run(() => { suspended.Start(); });
+                _ = Task.Run(() => { suspended.Start(); });
             }
 
-            waiting_.Clear();
-        }
-
-        public override string ToString()
-        {
-            return seq_.ToString();
+            this.waiting.Clear();
         }
     }
 }

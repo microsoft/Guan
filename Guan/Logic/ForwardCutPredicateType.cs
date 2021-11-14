@@ -1,30 +1,15 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using Guan.Common;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Predicate type for forwardcut.
     /// </summary>
     internal class ForwardCutPredicateType : PredicateType
     {
-        class Resolver : BooleanPredicateResolver
-        {
-            public Resolver(QueryContext context)
-                : base(null, null, context)
-            {
-            }
-
-            protected override bool Check()
-            {
-                return true;
-            }
-        }
-
         public static readonly ForwardCutPredicateType Singleton = new ForwardCutPredicateType();
 
         private ForwardCutPredicateType()
@@ -42,11 +27,26 @@ namespace Guan.Logic
             base.AdjustTerm(term, rule);
 
             int i;
-            for (i = 0; i < rule.Goals.Count && term != rule.Goals[i]; i++) ;
+            for (i = 0; i < rule.Goals.Count && term != rule.Goals[i]; i++)
+            {
+            }
 
-            if (i == 0 || i >= rule.Goals.Count -1 || rule.Goals[i - 1].PredicateType is ConstraintPredicateType)
+            if (i == 0 || i >= rule.Goals.Count - 1 || rule.Goals[i - 1].PredicateType is ConstraintPredicateType)
             {
                 throw new GuanException("Invalid use of forwardcut");
+            }
+        }
+
+        private class Resolver : BooleanPredicateResolver
+        {
+            public Resolver(QueryContext context)
+                : base(null, null, context)
+            {
+            }
+
+            protected override Task<bool> CheckAsync()
+            {
+                return Task.FromResult(true);
             }
         }
     }

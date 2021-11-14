@@ -1,8 +1,6 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
     /// <summary>
@@ -10,22 +8,22 @@ namespace Guan.Logic
     /// </summary>
     public class TermArgument
     {
-        private string name_;
-        private ArgumentDescription desc_;
-        private Term value_;
+        private string name;
+        private ArgumentDescription desc;
+        private Term value;
 
         public TermArgument(string name, Term value, ArgumentDescription desc = null)
         {
-            name_ = name;
-            value_ = value;
-            desc_ = desc;
+            this.name = name;
+            this.value = value;
+            this.desc = desc;
         }
 
         public string Name
         {
             get
             {
-                return name_;
+                return this.name;
             }
         }
 
@@ -33,7 +31,7 @@ namespace Guan.Logic
         {
             get
             {
-                return desc_;
+                return this.desc;
             }
         }
 
@@ -41,17 +39,18 @@ namespace Guan.Logic
         {
             get
             {
-                return value_;
+                return this.value;
             }
+
             set
             {
-                value_ = value;
+                this.value = value;
             }
         }
 
         public override string ToString()
         {
-            return Name + ":" + value_.ToString();
+            return this.Name + ":" + this.value.ToString();
         }
     }
 }

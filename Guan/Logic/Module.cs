@@ -1,109 +1,79 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Collections.Generic;
-using Guan.Common;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// A module is a collection of predicate types.
     /// </summary>
     public class Module
     {
-        private string name_;
-        private bool dynamic_;
-        private Dictionary<string, PredicateType> types_;
-
         private static readonly Module SystemModule = CreateSystemModule();
+
+        private string name;
+        private bool dynamic;
+        private Dictionary<string, PredicateType> types;
 
         internal Module(string name)
         {
-            name_ = name;
-            types_ = new Dictionary<string, PredicateType>();
-            dynamic_ = true;
+            this.name = name;
+            this.types = new Dictionary<string, PredicateType>();
+            this.dynamic = true;
         }
 
         private Module(string name, Dictionary<string, PredicateType> types)
         {
-            name_ = name;
-            types_ = types;
-            dynamic_ = false;
+            this.name = name;
+            this.types = types;
+            this.dynamic = false;
         }
 
         public string Name
         {
             get
             {
-                return name_;
+                return this.name;
             }
         }
 
-        /// <summary>
-        /// Add a dynamic predicate (assert).
-        /// </summary>
-        /// <param name="term">The predicate.</param>
-        /// <param name="append">Whether to add the predicate in append mode.</param>
-        public void Add(CompoundTerm term, bool append)
+        public static async Task<Module> ParseAsync(string path, IFunctorProvider provider, List<string> publicTypes = null)
         {
-            if (!dynamic_)
+            List<string> ruleExpressions = new List<string>();
+            string current = null;
+            using (StreamReader reader = new StreamReader(path))
             {
-                throw new GuanException("Not a dynamic module");
-            }
-
-            lock (types_)
-            {
-                PredicateType type;
-                if (!types_.TryGetValue(term.Functor.Name, out type))
+                string line;
+                while ((line = await reader.ReadLineAsync()) != null)
                 {
-                    type = new PredicateType(term.Functor.Name, true);
-                    types_.Add(term.Functor.Name, type);
+                    line = line.Trim();
+                    if (line.Length > 0 && !line.StartsWith("#"))
+                    {
+                        if (current != null)
+                        {
+                            line = current + line;
+                        }
+
+                        if (line.EndsWith("\\"))
+                        {
+                            line = line.TrimEnd('\\');
+                            current = line;
+                        }
+                        else
+                        {
+                            ruleExpressions.Add(line);
+                            current = null;
+                        }
+                    }
                 }
 
-                CompoundTerm head = new CompoundTerm(type, VariableBinding.Ground, term.Arguments);
-                Rule rule = new Rule(term.ToString(), head, new List<CompoundTerm>(), VariableTable.Empty);
-                type.AddRule(this, rule, append);
-            }
-        }
-
-        public void Add(PredicateType predicateType)
-        {
-            lock (types_)
-            {
-                types_[predicateType.Name] = predicateType;
-            }
-        }
-
-        public IEnumerable<PredicateType> GetPublicTypes()
-        {
-            List<PredicateType> result = new List<PredicateType>();
-            foreach (var type in types_)
-            {
-                if (type.Value.IsPublic)
-                {
-                    result.Add(type.Value);
-                }
+                ReleaseAssert.IsTrue(current == null, "Last line not completed for {0}", path);
             }
 
-            return result;
-        }
-
-        public PredicateType GetPredicateType(string name)
-        {
-            PredicateType result;
-            if (types_.TryGetValue(name, out result) && result.IsPublic)
-            {
-                return result;
-            }
-
-            return null;
-        }
-
-        public override string ToString()
-        {
-            return name_;
+            return Parse(path, ruleExpressions, provider, publicTypes);
         }
 
         public static Module Parse(string name, List<string> ruleExpressions, IFunctorProvider provider, List<string> publicTypes = null)
@@ -126,6 +96,71 @@ namespace Guan.Logic
             return Parse(name, rules, provider, publicTypes);
         }
 
+        /// <summary>
+        /// Add a dynamic predicate (assert).
+        /// </summary>
+        /// <param name="term">The predicate.</param>
+        /// <param name="append">Whether to add the predicate in append mode.</param>
+        public void Add(CompoundTerm term, bool append)
+        {
+            if (!this.dynamic)
+            {
+                throw new GuanException("Not a dynamic module");
+            }
+
+            lock (this.types)
+            {
+                PredicateType type;
+                if (!this.types.TryGetValue(term.Functor.Name, out type))
+                {
+                    type = new PredicateType(term.Functor.Name, true);
+                    this.types.Add(term.Functor.Name, type);
+                }
+
+                CompoundTerm head = new CompoundTerm(type, VariableBinding.Ground, term.Arguments);
+                Rule rule = new Rule(term.ToString(), head, new List<CompoundTerm>(), VariableTable.Empty);
+                type.AddRule(this, rule, append);
+            }
+        }
+
+        public void Add(PredicateType predicateType)
+        {
+            lock (this.types)
+            {
+                this.types[predicateType.Name] = predicateType;
+            }
+        }
+
+        public IEnumerable<PredicateType> GetPublicTypes()
+        {
+            List<PredicateType> result = new List<PredicateType>();
+            foreach (KeyValuePair<string, PredicateType> type in this.types)
+            {
+                if (type.Value.IsPublic)
+                {
+                    result.Add(type.Value);
+                }
+            }
+
+            return result;
+        }
+
+        public PredicateType GetPredicateType(string name)
+        {
+            PredicateType result;
+            if (this.types.TryGetValue(name, out result) && result.IsPublic)
+            {
+                return result;
+            }
+
+            return null;
+        }
+
+        public override string ToString()
+        {
+            return this.name;
+        }
+
         internal static Module Parse(string name, List<Rule> rules, IFunctorProvider provider, List<string> publicTypes)
         {
             Dictionary<string, PredicateType> types = new Dictionary<string, PredicateType>();
@@ -134,11 +169,9 @@ namespace Guan.Logic
             for (int i = 0; i < rules.Count;)
             {
                 string typeName = rules[i].Head.Functor.Name;
-
                 if (typeName != "desc")
                 {
                     PredicateType type;
-
                     if (!types.TryGetValue(typeName, out type))
                     {
                         if (provider != null)
@@ -169,16 +202,13 @@ namespace Guan.Logic
             for (int i = 0; i < rules.Count; i++)
             {
                 bool remove = false;
-
                 foreach (CompoundTerm goal in rules[i].Goals)
                 {
                     string typeName = goal.Functor.Name;
                     PredicateType type;
-
                     if (!types.TryGetValue(typeName, out type))
                     {
                         type = GetGoalPredicateType(typeName, provider, result);
-
                         if (type == FailPredicateType.NotApplicable)
                         {
                             remove = true;
@@ -213,10 +243,12 @@ namespace Guan.Logic
 
         private static void ProcessDesc(Rule rule, Dictionary<string, PredicateType> types)
         {
-            if (rule.Goals.Count > 0 || rule.Head.Arguments.Count < 2 || !(rule.Head.Arguments[0].Value is Constant))
+            if (rule.Goals.Count > 0 || rule.Head.Arguments.Count < 2 || !rule.Head.IsGround() || !(rule.Head.Arguments[0].Value is Constant))
             {
                 throw new GuanException("Invalid desc predicate: {0}", rule);
             }
+
+            rule.ProcessMetaDataHead();
 
             Constant constant = (Constant)rule.Head.Arguments[0].Value;
             PredicateType type;
@@ -304,13 +336,15 @@ namespace Guan.Logic
             {
                 return evaluatedFunctor.ConstraintType;
             }
-
-            return functor as PredicateType;
+            else
+            {
+                return functor as PredicateType;
+            }
         }
 
         private static void UpdateFunctor(CompoundTerm term, Dictionary<string, PredicateType> types, IFunctorProvider provider, Module from)
         {
-            foreach (var arg in term.Arguments)
+            foreach (TermArgument arg in term.Arguments)
             {
                 CompoundTerm compound = arg.Value as CompoundTerm;
                 if (compound != null)
@@ -339,14 +373,16 @@ namespace Guan.Logic
 
         private static Module CreateSystemModule()
         {
-            List<string> rules = new List<string>
+            List<string> rules = new List<string>() 
             {
+                "repeat",
+                "repeat :- repeat",
                 "append([], ?Ys, ?Ys)",
                 "append([?X|?Xs], ?Ys, [?X|?Zs]) :- append(?Xs, ?Ys, ?Zs)",
                 "member(?X, [?X|_]",
                 "member(?X, [_|?Xs]) :- member(?X, ?Xs)",
                 "length([], 0)",
-                "length([_|?Xs], ?Y) :- length(?Xs, ?Z), ?Y = ?Z + 1",
+                "length([_|?Xs], ?Y) :- length(?Xs, ?Z), ?Y is ?Z + 1",
                 "reverse(?Xs, ?Ys) :- _reverse(?Xs, [], ?Ys)",
                 "_reverse([], ?Ys, ?Ys",
                 "_reverse([?X|?Xs], ?A, ?Ys) :- _reverse(?Xs, [?X|?A], ?Ys)",

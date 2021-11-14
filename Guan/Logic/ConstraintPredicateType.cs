@@ -1,67 +1,66 @@
-﻿// ------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
-// ------------------------------------------------------------
-
-using System.Threading.Tasks;
-
+﻿//---------------------------------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//---------------------------------------------------------------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System;
+    using System.Threading.Tasks;
+
     internal class ConstraintPredicateType : PredicateType
     {
-        class Resolver : PredicateResolver
-        {
-            private EvaluatedFunctor func_;
-
-            public Resolver(EvaluatedFunctor func, CompoundTerm input, Constraint constraint, QueryContext context)
-                : base(input, constraint, context)
-            {
-                func_ = func;
-            }
-
-            public override Task<UnificationResult> OnGetNextAsync()
-            {
-                UnificationResult result = null;
-                if (Iteration == 0)
-                {
-                    Term term = func_.Evaluate(Input, Context);
-                    Constant constant = term as Constant;
-                    if (constant == null)
-                    {
-                        result = new UnificationResult(0);
-                        result.AddConstraint(Input);
-                    }
-                    else if (constant.IsTrue())
-                    {
-                        result = UnificationResult.Empty;
-                    }
-
-                    Complete();
-                }
-
-                return Task.FromResult(result);
-            }
-        }
-
-        private EvaluatedFunctor func_;
+        private EvaluatedFunctor func;
 
         public ConstraintPredicateType(EvaluatedFunctor evaluatedFunctor)
             : base(evaluatedFunctor.Name)
         {
-            func_ = evaluatedFunctor;
+            this.func = evaluatedFunctor;
         }
 
         public EvaluatedFunctor Func
         {
             get
             {
-                return func_;
+                return this.func;
             }
         }
 
         public override PredicateResolver CreateResolver(CompoundTerm input, Constraint constraint, QueryContext context)
         {
-            return new Resolver(func_, input, constraint, context);
+            return new Resolver(this.func, input, constraint, context);
+        }
+
+        private class Resolver : PredicateResolver
+        {
+            private EvaluatedFunctor func;
+
+            public Resolver(EvaluatedFunctor func, CompoundTerm input, Constraint constraint, QueryContext context)
+                : base(input, constraint, context)
+            {
+                this.func = func;
+            }
+
+            public override Task<UnificationResult> OnGetNextAsync()
+            {
+                UnificationResult result = null;
+                if (this.Iteration == 0)
+                {
+                    Term term = this.func.Evaluate(this.Input, this.Context);
+                    Constant constant = term as Constant;
+                    if (constant == null)
+                    {
+                        result = new UnificationResult(0);
+                        result.AddConstraint(this.Input);
+                    }
+                    else if (constant.IsTrue())
+                    {
+                        result = UnificationResult.Empty;
+                    }
+
+                    this.Complete();
+                }
+
+                return Task.FromResult(result);
+            }
         }
     }
 }
