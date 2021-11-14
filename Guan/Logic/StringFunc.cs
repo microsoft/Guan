@@ -1,20 +1,9 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.
-//
-// @File: StrFunc.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Function to convert object to literal string with quotation marks.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
-    using System;
-
     internal class StringFunc : UnaryFunc
     {
         public static readonly StringFunc Singleton = new StringFunc();

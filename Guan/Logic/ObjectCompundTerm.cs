@@ -1,12 +1,13 @@
-﻿//---------------------------------------------------------------------------------------------------------------------
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-//---------------------------------------------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
     using System;
     using System.Globalization;
     using System.Reflection;
-    //using Newtonsoft.Json;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Adapater to expose object properties as a compund term using reflection.
@@ -89,8 +90,7 @@ namespace Guan.Logic
                 return "null";
             }
 
-            return null;
-            //return JsonConvert.SerializeObject(this.value, Formatting.Indented);
+            return JsonConvert.SerializeObject(this.value, Formatting.Indented);
         }
     }
 }

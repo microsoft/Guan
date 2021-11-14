@@ -1,15 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.
-//
-// @File: GuanFunc.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Define the functions that can be used in TraceExpression.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
     using System;

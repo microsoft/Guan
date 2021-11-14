@@ -1,20 +1,9 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.
-//
-// @File: GuanPredicate.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Predicate expression used for matching trace records.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
-    using System;
-
     public class GuanPredicate
     {
         public static readonly GuanPredicate MatchAll = new GuanPredicate(true);

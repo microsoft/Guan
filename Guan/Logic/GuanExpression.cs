@@ -1,15 +1,7 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.
-//
-// @File: GuanExpression.cs
-//
-// @Owner: xunlu
-// @Test:  xunlu
-//
-// Purpose:
-//   Wrapper for expression used in trace.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
     using System;
