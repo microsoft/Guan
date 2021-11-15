@@ -22,7 +22,7 @@ function Build-Nuget {
 
     [string] $nugetSpecTemplate = [System.IO.File]::ReadAllText([System.IO.Path]::Combine($scriptPath, "Guan.nuspec.template"))
 
-    [string] $nugetSpecPath = "$scriptPath\Guan\bin\release\netstandard2.0\$($packageId).nuspec"
+    [string] $nugetSpecPath = "$scriptPath\Guan\bin\release\netstandard2.1\$($packageId).nuspec"
 
     [System.IO.File]::WriteAllText($nugetSpecPath, $nugetSpecTemplate.Replace("%PACKAGE_ID%", $packageId).Replace("%ROOT_PATH%", $scriptPath))
 
@@ -37,7 +37,7 @@ try {
 
     Install-Nuget
 
-    Build-Nuget "Microsoft.Logic.Guan" "$scriptPath\Guan\bin\release\netstandard2.0"
+    Build-Nuget "Microsoft.Logic.Guan" "$scriptPath\Guan\bin\release\netstandard2.1"
 }
 finally {
 
