@@ -30,11 +30,11 @@ As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/i
 
 * It is allowed to have positional arguments (like standard Prolog) before the appearance of any named argument. For example, goal(?NodeId, P2P.Send, text=?text, time=?t) is a valid compound term where the first two arguments do not have explicit names. Internally, names are assigned implicitly. The first argument will have a name “0”, and the second with “1”, etc. Note that the argument name “time” for the last argument can’t be omitted, since there is already a named argument “text” before it. 
 
-* If an argument is not positional (appears after some named argument), its name can be inferred from the argument value if one of the following is true: 
+   * If an argument is not positional (appears after some named argument), its name can be inferred from the argument value if one of the following is true: 
 
-* If the argument is a variable, the argument name will be the same as the variable name. For example, TraceRecord(Source=?NodeId, GroupType=P2P.Send, ?text, time=?t). The name of the 3rd argument is inferred to be “text”. 
+   * If the argument is a variable, the argument name will be the same as the variable name. For example, TraceRecord(Source=?NodeId, GroupType=P2P.Send, ?text, time=?t). The name of the 3rd argument is inferred to be “text”. 
 
-* If the argument is a compound, the argument name will be the same as the functor name. For example, somegoal(arg0=0, point(1, 2)). The name of the second argument is “point”. 
+   * If the argument is a compound, the argument name will be the same as the functor name. For example, somegoal(arg0=0, point(1, 2)). The name of the second argument is “point”. 
 
 * The custom behavior of a predicate type might implement type-specific syntax sugar: if the head of a rule with the corresponding type does not have an argument mentioned, the argument will be added automatically with the value being a variable with the same name. For example, suppose “mygoal” is a type which has two arguments v1 and v2, the following rules are all equivalent: 
 
