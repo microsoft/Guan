@@ -30,7 +30,7 @@ namespace Guan.Logic
                 }
 
                 index = -1;
-                if (name.EndsWith(']'))
+                if (name.EndsWith("]"))
                 {
                     index = name.LastIndexOf('[');
                     if (index > 0)

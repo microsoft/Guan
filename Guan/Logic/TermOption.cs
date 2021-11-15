@@ -80,7 +80,7 @@ namespace Guan.Logic
                 else if (name == Trace)
                 {
                     string traceConfig = (string)value;
-                    this.traceTypes = new List<string>(traceConfig.Split(',', System.StringSplitOptions.RemoveEmptyEntries));
+                    this.traceTypes = new List<string>(traceConfig.Split(new char[] { ',' },  System.StringSplitOptions.RemoveEmptyEntries));
                 }
                 else if (name == "CatchException")
                 {

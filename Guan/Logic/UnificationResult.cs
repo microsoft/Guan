@@ -63,7 +63,7 @@ namespace Guan.Logic
             StringBuilder result = new StringBuilder();
             foreach (OutputVariable entry in this.entries)
             {
-                if (!entry.Original.Name.StartsWith('_'))
+                if (!entry.Original.Name.StartsWith("_"))
                 {
                     Term value = entry.GetBoundTerm();
                     LinkedVariable linkedVariable = value as LinkedVariable;
