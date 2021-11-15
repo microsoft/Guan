@@ -2,11 +2,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Threading.Tasks;
-
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Resolver that acts as a boolean condition check with empty output.
     /// </summary>
@@ -17,12 +16,10 @@ namespace Guan.Logic
         {
         }
 
-        protected abstract bool Check();
-
-        public override Task<UnificationResult> OnGetNextAsync()
+        public override async Task<UnificationResult> OnGetNextAsync()
         {
             UnificationResult result;
-            if (Check())
+            if (await this.CheckAsync())
             {
                 result = UnificationResult.Empty;
             }
@@ -31,7 +28,9 @@ namespace Guan.Logic
                 result = null;
             }
 
-            return Task.FromResult<UnificationResult>(result);
+            return result;
         }
+
+        protected abstract Task<bool> CheckAsync();
     }
 }

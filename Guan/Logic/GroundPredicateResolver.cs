@@ -1,7 +1,11 @@
-﻿using System.Threading.Tasks;
-
+﻿// ------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Resolver that uses grounded term to unify with the goal.
     /// This is typically resolver of external predicate which uses the goal
@@ -9,32 +13,36 @@ namespace Guan.Logic
     /// </summary>
     public abstract class GroundPredicateResolver : PredicateResolver
     {
-        private VariableBinding binding_;
+        private VariableBinding binding;
+        private int count;
 
-        public GroundPredicateResolver(CompoundTerm input, Constraint constraint, QueryContext context, int max = int.MaxValue)
+        protected GroundPredicateResolver(CompoundTerm input, Constraint constraint, QueryContext context, int max = int.MaxValue)
             : base(input, constraint, context, max)
         {
-            binding_ = new VariableBinding(VariableTable.Empty, 0, input.Binding.Level + 1);
+            this.binding = new VariableBinding(VariableTable.Empty, 0, input.Binding.Level + 1);
+            this.count = 0;
         }
 
         public override async Task<UnificationResult> OnGetNextAsync()
         {
             UnificationResult result = null;
 
-            while (result == null && !Completed)
+            while (result == null && this.count < this.Max && !this.Completed)
             {
-                Term term = await GetNextTermAsync();
+                Term term = await this.GetNextTermAsync();
                 if (term == null)
                 {
                     return null;
                 }
 
-                if (binding_.Unify(term, Input))
+                if (this.binding.Unify(term, this.Input))
                 {
-                    result = binding_.CreateOutput();
+                    result = this.binding.CreateOutput();
                 }
 
-                binding_.ResetOutput();
+                this.count++;
+
+                this.binding.ResetOutput();
             }
 
             return result;

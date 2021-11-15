@@ -2,19 +2,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections;
-using System.Text;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections;
+    using System.Text;
+
     /// <summary>
     /// Logic specific to list.
     /// </summary>
     public static class ListTerm
     {
-        public static Functor ListFunctor = new Functor(".");
+        private static Functor listFunctor = new Functor(".");
+
+        public static Functor ListFunctor
+        {
+            get
+            {
+                return listFunctor;
+            }
+        }
 
         public static CompoundTerm Add(CompoundTerm current, Term child)
         {
@@ -34,25 +40,26 @@ namespace Guan.Logic
         public static string ToString(CompoundTerm term)
         {
             StringBuilder result = new StringBuilder();
-            result.Append("[");
+            _ = result.Append("[");
 
             CompoundTerm current = term;
             Term next;
             do
             {
-                result.Append(current.Arguments[0].Value).Append(',');
+                _ = result.Append(current.Arguments[0].Value).Append(',');
                 next = current.Arguments[1].Value.GetEffectiveTerm();
                 current = next as CompoundTerm;
-            } while (current != null && current.Functor.Name == ".");
+            }
+            while (current != null && current.Functor.Name == ".");
 
             result.Length--;
             if (next == Constant.Nil)
             {
-                result.Append("]");
+                _ = result.Append("]");
             }
             else
             {
-                result.AppendFormat("|{0}]", next);
+                _ = result.AppendFormat("|{0}]", next);
             }
 
             return result.ToString();
@@ -111,12 +118,14 @@ namespace Guan.Logic
         {
             Term result = Constant.Nil;
             CompoundTerm current = null;
+            int count = 0;
             foreach (object member in collection)
             {
                 CompoundTerm next = new CompoundTerm(ListFunctor);
                 if (current != null)
                 {
                     current.AddArgument(next, "1");
+                    count++;
                 }
                 else
                 {
@@ -130,6 +139,7 @@ namespace Guan.Logic
             if (current != null)
             {
                 current.AddArgument(Constant.Nil, "1");
+                count++;
             }
 
             return result;

@@ -1,9 +1,8 @@
-
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Guan.Common;
+using Guan.Logic;
 
 namespace GuanTest
 {
@@ -71,7 +70,7 @@ namespace GuanTest
         /// <param name="args">Arguments</param>
         public void ReportError(string format, params object[] args)
         {
-            EventLog.WriteError("TestVerifier", format, args);
+            EventLogWriter.WriteError(format, args);
 
             lock (this)
             {

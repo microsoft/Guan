@@ -2,18 +2,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Base class for terms, including Constant, Variable and CompoundTerm.
     /// </summary>
     public abstract class Term
     {
-        public Term()
+        protected Term()
         {
         }
 
@@ -32,20 +30,28 @@ namespace Guan.Logic
             return this;
         }
 
-        public object GetValue()
+#pragma warning disable CA1024 // Use properties where appropriate
+        public object GetObjectValue()
+#pragma warning restore CA1024 // Use properties where appropriate
         {
-            ReleaseAssert.IsTrue(IsGround());
-
             Constant constant = this as Constant;
             if (constant != null)
             {
                 return constant.Value;
             }
 
-            return this;
+            ObjectCompundTerm objectCompundTerm = this as ObjectCompundTerm;
+            if (objectCompundTerm != null)
+            {
+                return objectCompundTerm.Value;
+            }
+
+            return null;
         }
 
+#pragma warning disable CA1024 // Use properties where appropriate
         public string GetStringValue()
+#pragma warning restore CA1024 // Use properties where appropriate
         {
             Constant constant = this as Constant;
             if (constant == null)
@@ -56,15 +62,26 @@ namespace Guan.Logic
             return constant.Value as string;
         }
 
+        internal static Term FromObject(object value)
+        {
+            Term term = value as Term;
+            if (term != null)
+            {
+                return term;
+            }
+
+            return new Constant(value);
+        }
+
         internal Term ForceEvaluate(QueryContext context)
         {
-            Term result = GetEffectiveTerm();
+            Term result = this.GetEffectiveTerm();
             ReleaseAssert.IsTrue(!(result is Variable), "{0} is not gounded", this);
 
             CompoundTerm compound = result as CompoundTerm;
             if (compound != null && compound.Functor is EvaluatedFunctor)
             {
-                foreach (var arg in compound.Arguments)
+                foreach (TermArgument arg in compound.Arguments)
                 {
                     arg.Value = arg.Value.ForceEvaluate(context);
                 }
@@ -82,7 +99,7 @@ namespace Guan.Logic
         /// <returns>Grounded copy of the term</returns>
         internal Term GetGroundedCopy()
         {
-            Term term = GetEffectiveTerm();
+            Term term = this.GetEffectiveTerm();
 
             Constant constant = term as Constant;
             if (constant != null)
@@ -94,7 +111,7 @@ namespace Guan.Logic
 
             CompoundTerm compound = (CompoundTerm)term;
             CompoundTerm result = new CompoundTerm(compound.Functor, null);
-            foreach (var arg in compound.Arguments)
+            foreach (TermArgument arg in compound.Arguments)
             {
                 result.AddArgument(arg.Value.GetGroundedCopy(), arg.Name);
             }
@@ -104,7 +121,7 @@ namespace Guan.Logic
 
         internal Term UpdateBinding(Dictionary<Variable, Variable> mapping, VariableBinding binding)
         {
-            Term term = GetEffectiveTerm();
+            Term term = this.GetEffectiveTerm();
 
             Constant constant = term as Constant;
             if (constant != null)
@@ -131,7 +148,7 @@ namespace Guan.Logic
                 Term newArg = compound.Arguments[i].Value.UpdateBinding(mapping, binding);
                 if (result == null && newArg != compound.Arguments[i].Value)
                 {
-                    result = new CompoundTerm(compound.Functor, Binding);
+                    result = new CompoundTerm(compound.Functor, this.Binding);
                     for (int j = 0; j < i; j++)
                     {
                         result.AddArgument(compound.Arguments[j].Value, compound.Arguments[j].Name);
@@ -154,24 +171,13 @@ namespace Guan.Logic
 
         internal bool Unify(Term other)
         {
-            VariableBinding binding = Binding;
+            VariableBinding binding = this.Binding;
             if (binding == VariableBinding.Ground)
             {
                 binding = other.Binding;
             }
 
             return binding.Unify(this, other);
-        }
-
-        internal static Term FromObject(object value)
-        {
-            Term term = value as Term;
-            if (term != null)
-            {
-                return term;
-            }
-
-            return new Constant(value);
         }
     }
 }

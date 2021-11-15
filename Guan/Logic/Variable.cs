@@ -2,12 +2,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Variable term at runtime which can be bound to another term, including
     /// another variable.
@@ -17,43 +15,37 @@ namespace Guan.Logic
     /// </summary>
     public class Variable : Term
     {
-        private string name_;
-        private Term value_;
-        private int index_;
-        private int sequence_;
-        private VariableBinding binding_;
+        private string name;
+        private Term value;
+        private int index;
+        private int sequence;
+        private VariableBinding binding;
 
         internal Variable(string name, VariableBinding binding)
         {
-            name_ = name;
-            binding_ = binding;
-            index_ = int.MaxValue;
-            sequence_ = -1;
+            this.name = name;
+            this.binding = binding;
+            this.index = int.MaxValue;
+            this.sequence = -1;
         }
 
         internal Variable(Variable other, VariableBinding binding)
         {
-            name_ = other.name_;
-            binding_ = binding;
-            index_ = other.index_;
-            sequence_ = other.sequence_;
-            if (other.binding_.IsValid(other.index_, other.sequence_))
+            this.name = other.name;
+            this.binding = binding;
+            this.index = other.index;
+            this.sequence = other.sequence;
+            if (other.binding.IsValid(other.index, other.sequence))
             {
-                value_ = other.value_;
+                this.value = other.value;
             }
-        }
-
-        internal void Reset()
-        {
-            index_ = int.MaxValue;
-            sequence_ = -1;
         }
 
         public string Name
         {
             get
             {
-                return name_;
+                return this.name;
             }
         }
 
@@ -61,19 +53,19 @@ namespace Guan.Logic
         {
             get
             {
-                return binding_;
+                return this.binding;
             }
         }
 
         public override bool IsGround()
         {
-            Term value = GetBoundTerm();
+            Term value = this.GetBoundTerm();
             return (value != null && value.IsGround());
         }
 
         public override Term GetEffectiveTerm()
         {
-            Term result = GetBoundTerm();
+            Term result = this.GetBoundTerm();
             if (result == null)
             {
                 result = this;
@@ -86,56 +78,62 @@ namespace Guan.Logic
             return result;
         }
 
+        public void SetValue(Term value)
+        {
+            ReleaseAssert.IsTrue(!this.binding.IsValid(this.index, this.sequence));
+            this.index = this.binding.CurrentIndex;
+            this.sequence = this.binding.Sequence;
+            this.value = value;
+        }
+
+        public override string ToString()
+        {
+            Term value = this.GetEffectiveTerm();
+            if (value != this)
+            {
+                return value.ToString();
+            }
+
+            return "?" + this.name;
+        }
+
+        internal void Reset()
+        {
+            this.index = int.MaxValue;
+            this.sequence = -1;
+        }
+
         internal Term GetBoundTerm()
         {
             Term result = null;
 
             Variable current = this;
-            while (current != null && current.value_ != null && binding_.IsValid(current.index_, sequence_))
+            while (current != null && current.value != null && this.binding.IsValid(current.index, this.sequence))
             {
-                result = current.value_;
+                result = current.value;
                 current = result as Variable;
             }
 
             return result;
         }
 
-        public void SetValue(Term value)
-        {
-            ReleaseAssert.IsTrue(!binding_.IsValid(index_, sequence_));
-            index_ = binding_.CurrentIndex;
-            sequence_ = binding_.Sequence;
-            value_ = value;
-        }
-
         internal void UpdateValueBinding(Dictionary<Variable, Variable> mapping, VariableBinding binding)
         {
-            if (value_ != null)
+            if (this.value != null)
             {
-                value_ = value_.UpdateBinding(mapping, binding);
+                this.value = this.value.UpdateBinding(mapping, binding);
             }
         }
 
         internal bool Promote()
         {
-            if (binding_.IsValid(index_, sequence_))
+            if (this.binding.IsValid(this.index, this.sequence))
             {
-                index_ = -1;
+                this.index = -1;
                 return true;
             }
 
             return false;
-        }
-
-        public override string ToString()
-        {
-            Term value = GetEffectiveTerm();
-            if (value != this)
-            {
-                return value.ToString();
-            }
-
-            return "?" + name_;
         }
     }
 }

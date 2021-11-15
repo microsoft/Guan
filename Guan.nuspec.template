@@ -2,7 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="3.3.0">
     <id>%PACKAGE_ID%</id>
-    <version>1.0.0-Preview</version>
+    <version>1.0.1-Preview</version>
+	  <releaseNotes>
+- Refactorings, bug fixes implementation improvements, code improvements.
+	  </releaseNotes>
     <authors>Microsoft</authors>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
@@ -17,7 +20,7 @@
       <group targetFramework=".NETStandard2.0" />
     </dependencies>
     <projectUrl>https://github.com/microsoft/guan</projectUrl>
-    <tags>guan logic-programming netstandard20 csharp</tags>
+    <tags>guan logic-programming netstandard21 netcore csharp</tags>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
   </metadata>
   <files>

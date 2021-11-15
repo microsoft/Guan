@@ -2,116 +2,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Parser for term expressions.s
     /// </summary>
     internal static class TermExpression
     {
-        enum Associativity
+        private static readonly OperatorTri Operators = CreateOperators();
+        private static readonly Functor IdentityFunctor = new Functor("()");
+        private static readonly Operator CommaOperator = Operators.Get(",");
+        private static readonly Operator CloseParentheses = Operators.Get(")");
+
+        private enum Associativity
         {
             Left,
             Right,
             None,
             Open,
-            Close
-        }
-
-        class Operator
-        {
-            public string Name;
-            public int Priority;
-            public Associativity Associativity;
-            public OperatorFunctor Func;
-            private string display_;
-
-            public Operator(string name, int priority, Associativity associativity, string display)
-            {
-                Name = name;
-                Priority = priority;
-                Associativity = associativity;
-                Func = new OperatorFunctor(this);
-                display_ = display;
-            }
-
-            public CompoundTerm CreateTerm()
-            {
-                return new CompoundTerm(Func);
-            }
-
-            public override string ToString()
-            {
-                return display_;
-            }
-        }
-
-        class OperatorFunctor : Functor
-        {
-            public Operator Operator;
-
-            public OperatorFunctor(Operator op)
-                : base(op.Name)
-            {
-                Operator = op;
-            }
-
-            public override string ToString()
-            {
-                return Operator.ToString();
-            }
-        }
-
-        class OperatorTri : Tri<Operator>
-        {
-            public void Add(string name, int priority, Associativity associativity = Associativity.Left, string display = null)
-            {
-                Add(name, new Operator(name, priority, associativity, display ?? name));
-            }
-        }
-
-        private static readonly OperatorTri Operators = CreateOperators();
-        private static readonly Functor IdentityFunctor = new Functor("()");
-        private static readonly Operator CloseParentheses = Operators.Get(")");
-
-        private static OperatorTri CreateOperators()
-        {
-            OperatorTri result = new OperatorTri();
-
-            result.Add("(", 99, Associativity.Open, "()");
-            result.Add(")", 99, Associativity.Close);
-            result.Add("[", 99, Associativity.Open);
-            result.Add("]", 99, Associativity.Close);
-
-            result.Add(":-", 89, Associativity.None);
-
-            result.Add(";", 79, Associativity.Right);
-            result.Add("|", 79, Associativity.Right);
-            result.Add(",", 78, Associativity.Right, "','");
-
-            result.Add("=", 69, Associativity.None);
-            result.Add("is", 69, Associativity.None);
-
-            result.Add("||", 49);
-            result.Add("&&", 48);
-
-            result.Add("==", 39, Associativity.None);
-            result.Add("!=", 39, Associativity.None);
-            result.Add(">", 38, Associativity.None);
-            result.Add(">=", 38, Associativity.None);
-            result.Add("<", 38, Associativity.None);
-            result.Add("<=", 38, Associativity.None);
-
-            result.Add("+", 19);
-            result.Add("-", 19);
-            result.Add("*", 18);
-            result.Add("/", 18);
-
-            return result;
+            Close,
         }
 
         public static Term Parse(string text)
@@ -143,6 +54,7 @@ namespace Guan.Logic
                         {
                             current = new CompoundTerm(IdentityFunctor);
                         }
+
                         op = null;
                     }
                     else if (op.Associativity != Associativity.Close)
@@ -196,7 +108,7 @@ namespace Guan.Logic
                         }
                         else
                         {
-                            ReleaseAssert.IsTrue(i >= text.Length);
+                            ReleaseAssert.IsTrue(i >= text.Length, "Expression {0} not well formed", text);
                         }
                     }
                 }
@@ -215,25 +127,70 @@ namespace Guan.Logic
             }
 
             ReleaseAssert.IsTrue(pending.Count == 0);
-            last = term as CompoundTerm;
-            if (last != null && last.Functor == IdentityFunctor && last.Arguments.Count == 1)
-            {
-                term = last.Arguments[0].Value;
-            }
 
-            return term;
+            return ConvertIdentity(term);
+        }
+
+        private static OperatorTri CreateOperators()
+        {
+            OperatorTri result = new OperatorTri();
+
+            result.Add("(", 99, Associativity.Open, "()");
+            result.Add(")", 99, Associativity.Close);
+            result.Add("[", 99, Associativity.Open);
+            result.Add("]", 99, Associativity.Close);
+
+            result.Add(":-", 89, Associativity.None);
+
+            result.Add(";", 79, Associativity.Right);
+            result.Add("|", 79, Associativity.Right);
+            result.Add(",", 78, Associativity.Right, "','");
+
+            result.Add("=", 69, Associativity.None);
+            result.Add("is", 69, Associativity.None);
+
+            result.Add("||", 49);
+            result.Add("&&", 48);
+
+            result.Add("==", 39, Associativity.None);
+            result.Add("!=", 39, Associativity.None);
+            result.Add(">", 38, Associativity.None);
+            result.Add(">=", 38, Associativity.None);
+            result.Add("<", 38, Associativity.None);
+            result.Add("<=", 38, Associativity.None);
+
+            result.Add("+", 19);
+            result.Add("-", 19);
+            result.Add("*", 18);
+            result.Add("/", 18);
+            result.Add("%", 18);
+
+            return result;
         }
 
         private static void AddArgument(CompoundTerm term, Term arg)
         {
-            term.AddArgument(arg, term.Arguments.Count.ToString());
+            term.AddArgument(ConvertIdentity(arg), term.Arguments.Count.ToString());
+        }
+
+        private static Term ConvertIdentity(Term arg)
+        {
+            CompoundTerm compoundArg = arg as CompoundTerm;
+            while (compoundArg != null && compoundArg.Functor == IdentityFunctor)
+            {
+                ReleaseAssert.IsTrue(compoundArg.Arguments.Count == 1);
+                arg = compoundArg.Arguments[0].Value;
+                compoundArg = arg as CompoundTerm;
+            }
+
+            return arg;
         }
 
         /// <summary>
         /// Whether the stack should be popped.
         /// </summary>
         /// <param name="last">Functor of the top item on the (conceptual) stack.</param>
-        /// <param name="current">The current operator, will be set to null if it 
+        /// <param name="current">The current operator, will be set to null if it
         /// is consumed by the last term.</param>
         /// <returns>True if the stack should pop.</returns>
         private static bool CanPop(Functor last, ref Operator current)
@@ -246,6 +203,7 @@ namespace Guan.Logic
                 {
                     current = null;
                 }
+
                 return true;
             }
 
@@ -255,12 +213,13 @@ namespace Guan.Logic
                 {
                     current = null;
                 }
+
                 return true;
             }
 
-            if (lastOp == null || lastOp.Operator.Name == "(")
+            if (lastOp == null)
             {
-                if (current.Name != ",")
+                if (current.Name != "," || last == IdentityFunctor)
                 {
                     return false;
                 }
@@ -321,7 +280,7 @@ namespace Guan.Logic
                     }
 
                     int end = SkipQuote(text, c, offset);
-                    token = text.Substring(start + 1, end - start - 1);
+                    token = UnescapeQuote(text.Substring(start, end - start + 1), c);
                     offset = end + 1;
                 }
                 else
@@ -386,14 +345,76 @@ namespace Guan.Logic
                 {
                     return i;
                 }
-
-                if (text[i] == '\\')
+                else if (text[i] == '\\')
                 {
                     i++;
                 }
             }
 
             return index;
+        }
+
+        private static string UnescapeQuote(string text, char quote)
+        {
+            string to = quote.ToString();
+            string from = "\\" + to;
+            return text.Replace(from, to);
+        }
+
+        private class Operator
+        {
+            private string display;
+
+            public Operator(string name, int priority, Associativity associativity, string display)
+            {
+                this.Name = name;
+                this.Priority = priority;
+                this.Associativity = associativity;
+                this.Func = new OperatorFunctor(this);
+                this.display = display;
+            }
+
+            public string Name { get; set; }
+
+            public int Priority { get; set; }
+
+            public Associativity Associativity { get; set; }
+
+            public OperatorFunctor Func { get; set; }
+
+            public CompoundTerm CreateTerm()
+            {
+                return new CompoundTerm(this.Func);
+            }
+
+            public override string ToString()
+            {
+                return this.display;
+            }
+        }
+
+        private class OperatorFunctor : Functor
+        {
+            public OperatorFunctor(Operator op)
+                : base(op.Name)
+            {
+                this.Operator = op;
+            }
+
+            public Operator Operator { get; set; }
+
+            public override string ToString()
+            {
+                return this.Operator.ToString();
+            }
+        }
+
+        private class OperatorTri : Tri<Operator>
+        {
+            public void Add(string name, int priority, Associativity associativity = Associativity.Left, string display = null)
+            {
+                this.Add(name, new Operator(name, priority, associativity, display ?? name));
+            }
         }
     }
 }

@@ -2,28 +2,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
 namespace Guan.Logic
 {
     /// <summary>
     /// Variable term used in rules. At runtime they will be converted to Variable objects.
     /// </summary>
-    public class IndexedVariable : Term
+    internal class IndexedVariable : Term
     {
-        private int index_;
-        private string name_;
+        private int index;
+        private string name;
 
         public IndexedVariable(int index, string name)
         {
-            index_ = index;
-            name_ = name;
+            this.index = index;
+            this.name = name;
         }
 
         public int Index
         {
             get
             {
-                return index_;
+                return this.index;
             }
         }
 
@@ -31,7 +30,7 @@ namespace Guan.Logic
         {
             get
             {
-                return name_;
+                return this.name;
             }
         }
 
@@ -42,7 +41,7 @@ namespace Guan.Logic
 
         public override string ToString()
         {
-            return "?" + name_ + "_" + index_.ToString();
+            return "?" + this.name + "_" + this.index.ToString();
         }
     }
 }

@@ -2,15 +2,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Collection of variables in a rule.
     /// </summary>
-    public class VariableTable : List<string>
+    internal class VariableTable : List<string>
     {
         public static readonly VariableTable Empty = new VariableTable();
 
@@ -22,7 +21,7 @@ namespace Guan.Logic
         {
             if (name != "_")
             {
-                for (int i = 0; i < Count; i++)
+                for (int i = 0; i < this.Count; i++)
                 {
                     if (this[i] == name)
                     {
@@ -36,8 +35,8 @@ namespace Guan.Logic
                 return -1;
             }
 
-            Add(name);
-            return Count - 1;
+            this.Add(name);
+            return this.Count - 1;
         }
     }
 }

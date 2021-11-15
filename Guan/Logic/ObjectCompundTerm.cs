@@ -2,52 +2,44 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System;
-using System.Reflection;
-using System.Globalization;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System;
+    using System.Globalization;
+    using System.Reflection;
+    using Newtonsoft.Json;
+
     /// <summary>
     /// Adapater to expose object properties as a compund term using reflection.
     /// </summary>
     internal class ObjectCompundTerm : CompoundTerm
     {
-        private object value_;
-        private Type type_;
+        private static readonly Type[] EmptyTypes = new Type[0];
 
-        private ObjectCompundTerm(object value)
-            : base(Functor.ClassObject)
+        private object value;
+        private Type type;
+
+        public ObjectCompundTerm(object value, bool ignoreType = false)
+            : base(new Functor(ignoreType ? typeof(ObjectCompundTerm) : value.GetType()))
         {
-            value_ = value;
-            type_ = value.GetType();
+            this.value = value;
+            this.type = value.GetType();
         }
 
         public Type ObjectType
         {
             get
             {
-                return type_;
+                return this.type;
             }
         }
 
-        public override Term GetArgument(string name)
+        public object Value
         {
-            if (type_.GetProperty(name) == null)
+            get
             {
-                return null;
+                return this.value;
             }
-
-            object result = type_.InvokeMember(name, BindingFlags.GetProperty, null, value_, null, CultureInfo.InvariantCulture);
-            GuanObject guanObject = result as GuanObject;
-            if (guanObject != null && guanObject.GetValue() != null)
-            {
-                result = guanObject.GetValue();
-            }
-
-            return Term.FromObject(result);
         }
 
         public static ObjectCompundTerm Create(object value)
@@ -60,9 +52,45 @@ namespace Guan.Logic
             return new ObjectCompundTerm(value);
         }
 
+        public override Term GetExtendedArgument(string name)
+        {
+            object result;
+            IPropertyContext context = this.value as IPropertyContext;
+            if (context != null)
+            {
+                result = context[name];
+                if (result == null)
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                if (this.type.GetProperty(name) == null)
+                {
+                    return null;
+                }
+
+                result = this.type.InvokeMember(name, BindingFlags.GetProperty, null, this.value, null, CultureInfo.InvariantCulture);
+            }
+
+            GuanObject guanObject = result as GuanObject;
+            if (guanObject != null && guanObject.GetValue() != null)
+            {
+                result = guanObject.GetValue();
+            }
+
+            return Term.FromObject(result);
+        }
+
         public override string ToString()
         {
-            return value_.ToString();
+            if (this.value == null)
+            {
+                return "null";
+            }
+
+            return JsonConvert.SerializeObject(this.value, Formatting.Indented);
         }
     }
 }

@@ -2,9 +2,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using Guan.Common;
-
 namespace Guan.Logic
 {
     /// <summary>
@@ -12,21 +9,21 @@ namespace Guan.Logic
     /// </summary>
     internal class EvaluatedFunctor : Functor
     {
-        private GuanFunc func_;
-        private ConstraintPredicateType constraintType_;
+        private GuanFunc func;
+        private ConstraintPredicateType constraintType;
 
         public EvaluatedFunctor(GuanFunc func)
             : base(func.Name)
         {
-            func_ = func;
-            constraintType_ = new ConstraintPredicateType(this);
+            this.func = func;
+            this.constraintType = new ConstraintPredicateType(this);
         }
 
         public GuanFunc Func
         {
             get
             {
-                return func_;
+                return this.func;
             }
         }
 
@@ -34,7 +31,7 @@ namespace Guan.Logic
         {
             get
             {
-                return constraintType_;
+                return this.constraintType;
             }
         }
 
@@ -49,10 +46,10 @@ namespace Guan.Logic
                     return term;
                 }
 
-                args[i] = arg.GetValue();
+                args[i] = arg.GetObjectValue();
             }
 
-            object result = func_.Invoke(context, args);
+            object result = this.func.Invoke(context, args);
             return Term.FromObject(result);
         }
     }

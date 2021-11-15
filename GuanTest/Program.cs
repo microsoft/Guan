@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Guan.Common;
+using Guan.Logic;
 
 namespace GuanTest
 {
@@ -93,7 +93,7 @@ namespace GuanTest
                                 completedEvent_.Set();
                             }
 
-                            EventLog.WriteInfo("RunTest", "Thread completed, remaining: {0}", Utility.CollectionToString(pending_));
+                            EventLogWriter.WriteInfo("Thread completed, remaining: {0}", Utility.CollectionToString(pending_));
                             return;
                         }
 
@@ -101,9 +101,9 @@ namespace GuanTest
                         next_++;
                     }
 
-                    EventLog.WriteInfo("RunTest", "Start running {0}", tests_[last]);
+                    EventLogWriter.WriteInfo("Start running {0}", tests_[last]);
                     result = RunTest(tests_[last]);
-                    EventLog.WriteInfo("RunTest", "{0} result {1}", tests_[last], result);
+                    EventLogWriter.WriteInfo("{0} result {1}", tests_[last], result);
                 }
             }
         }
@@ -117,7 +117,7 @@ namespace GuanTest
             int result = session.Execute();
             DateTime t2 = DateTime.UtcNow;
 
-            EventLog.WriteInfo("Test", "{0} time spent: {1}, result = {2}", name, t2 - t1, result);
+            EventLogWriter.WriteInfo("{0} time spent: {1}, result = {2}", name, t2 - t1, result);
 
             return result;
         }

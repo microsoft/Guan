@@ -2,12 +2,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// A constraint is a collection of criteria (each represented as an evalutable
     /// compound) that can be validated.
@@ -18,59 +16,338 @@ namespace Guan.Logic
     /// </summary>
     public class Constraint
     {
-        class BoundEntry
+        public static readonly Constraint Empty = new Constraint();
+
+        private List<CompoundTerm> terms;
+        private List<BoundEntry> lowerEntries;
+        private List<BoundEntry> upperEnties;
+        private List<ValueEntry> valueEntries;
+
+        internal Constraint()
         {
-            private CompoundTerm term_;
-            private Variable variable_;
-            private object value_;
-            private bool isInclusive_;
+            this.terms = new List<CompoundTerm>();
+        }
+
+        internal List<CompoundTerm> Terms
+        {
+            get
+            {
+                return this.terms;
+            }
+        }
+
+        public List<object> GetValues(Variable variable, bool remove)
+        {
+            if (this.valueEntries == null)
+            {
+                return null;
+            }
+
+            List<object> result = null;
+            for (int i = this.valueEntries.Count - 1; i >= 0; i--)
+            {
+                List<object> values = this.valueEntries[i].Get(variable);
+                if (values != null)
+                {
+                    if (result == null)
+                    {
+                        result = values;
+                    }
+                    else
+                    {
+                        MergeValues(result, values);
+                    }
+
+                    if (remove)
+                    {
+                        _ = this.terms.Remove(this.valueEntries[i].Term);
+                        this.valueEntries.RemoveAt(i);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public object GetLowerBound(Variable variable, bool remove, out bool isInclusive)
+        {
+            return this.GetBound(false, variable, remove, out isInclusive);
+        }
+
+        public object GetUpperBound(Variable variable, bool remove, out bool isInclusive)
+        {
+            return this.GetBound(true, variable, remove, out isInclusive);
+        }
+
+        internal void Add(CompoundTerm term)
+        {
+            this.Process(term);
+        }
+
+        internal void Add(IEnumerable<CompoundTerm> terms)
+        {
+            foreach (CompoundTerm term in terms)
+            {
+                this.Process(term);
+            }
+        }
+
+        internal int Evaluate(QueryContext context)
+        {
+            int result = 1;
+            foreach (CompoundTerm term in this.terms)
+            {
+                Constant evaluted = term.Evaluate(context) as Constant;
+                if (evaluted == null)
+                {
+                    result = 0;
+                }
+                else if (!evaluted.IsTrue())
+                {
+                    return -1;
+                }
+            }
+
+            return result;
+        }
+
+        private static void MergeValues(List<object> list1, List<object> list2)
+        {
+            for (int i = list1.Count - 1; i >= 0; i--)
+            {
+                bool found = false;
+                for (int j = 0; j < list2.Count && !found; j++)
+                {
+                    found = object.Equals(list1[i], list2[j]);
+                }
+
+                if (!found)
+                {
+                    list1.RemoveAt(i);
+                }
+            }
+        }
+
+        private void Process(CompoundTerm term)
+        {
+            EvaluatedFunctor evaluatedFunctor = term.GetEvaluatedFunctor();
+
+            bool add = true;
+            if (evaluatedFunctor != null)
+            {
+                if (evaluatedFunctor.Func is AndFunc)
+                {
+                    foreach (TermArgument arg in term.Arguments)
+                    {
+                        CompoundTerm compound = arg.Value as CompoundTerm;
+                        if (compound != null)
+                        {
+                            this.Process(compound);
+                        }
+                    }
+
+                    add = false;
+                }
+
+                if (evaluatedFunctor.Func is OrFunc)
+                {
+                    ValueEntry entry = new ValueEntry(term);
+                    // We will only handle disjunction of a collectoin of comparisons
+                    // with the same variable.
+                    if (this.DecomposeDisjunction(term, entry))
+                    {
+                        this.AddValueEntry(entry);
+                        add = false;
+                    }
+                }
+                else
+                {
+                    RawEntry rawEntry = RawEntry.Convert(term);
+                    if (rawEntry != null)
+                    {
+                        rawEntry.AddToConstaint(this, term);
+                    }
+                }
+            }
+
+            if (add)
+            {
+                this.terms.Add(term);
+            }
+        }
+
+        private bool DecomposeDisjunction(CompoundTerm term, ValueEntry entry)
+        {
+            foreach (TermArgument arg in term.Arguments)
+            {
+                CompoundTerm compound = arg.Value as CompoundTerm;
+                if (compound == null)
+                {
+                    return false;
+                }
+
+                EvaluatedFunctor evaluatedFunctor = compound.GetEvaluatedFunctor();
+                if (evaluatedFunctor.Func is OrFunc)
+                {
+                    if (!this.DecomposeDisjunction(compound, entry))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    RawEntry rawEntry = RawEntry.Convert(compound);
+                    if (rawEntry == null || !entry.Add(rawEntry))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void AddValueEntry(ValueEntry entry)
+        {
+            if (this.valueEntries == null)
+            {
+                this.valueEntries = new List<ValueEntry>();
+            }
+
+            this.valueEntries.Add(entry);
+        }
+
+        private void AddUpperBoundEntry(BoundEntry entry)
+        {
+            if (this.upperEnties == null)
+            {
+                this.upperEnties = new List<BoundEntry>();
+            }
+
+            this.upperEnties.Add(entry);
+        }
+
+        private void AddLowerBoundEntry(BoundEntry entry)
+        {
+            if (this.lowerEntries == null)
+            {
+                this.lowerEntries = new List<BoundEntry>();
+            }
+
+            this.lowerEntries.Add(entry);
+        }
+
+        private object GetBound(bool upper, Variable variable, bool remove, out bool isInclusive)
+        {
+            isInclusive = false;
+
+            List<BoundEntry> entries = (upper ? this.upperEnties : this.lowerEntries);
+            if (entries == null)
+            {
+                return null;
+            }
+
+            object result = null;
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                bool inclusive;
+                object value = entries[i].Get(variable, out inclusive);
+                if (value != null)
+                {
+                    if (result == null || this.CompareResult(value, inclusive, result, isInclusive, upper))
+                    {
+                        result = value;
+                        isInclusive = inclusive;
+                    }
+
+                    if (remove)
+                    {
+                        _ = this.terms.Remove(entries[i].Term);
+                        entries.RemoveAt(i);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private bool CompareResult(object value1, bool inclusive1, object value2, bool inclusive2, bool upper)
+        {
+            if (object.Equals(value1, value2))
+            {
+                return (!inclusive1 && inclusive2);
+            }
+
+            ComparisonFunc func = (upper ? ComparisonFunc.LT : ComparisonFunc.GT);
+            return func.Invoke(value1, value2);
+        }
+
+        private class BoundEntry
+        {
+            private CompoundTerm term;
+            private Variable variable;
+            private object value;
+            private bool isInclusive;
 
             public BoundEntry(CompoundTerm term, Variable variable, object value, bool isInclusive)
             {
-                term_ = term;
-                variable_ = variable;
-                value_ = value;
-                isInclusive_ = isInclusive;
+                this.term = term;
+                this.variable = variable;
+                this.value = value;
+                this.isInclusive = isInclusive;
             }
 
             public CompoundTerm Term
             {
                 get
                 {
-                    return term_;
+                    return this.term;
                 }
             }
 
             public object Get(Variable variable, out bool isInclusive)
             {
-                if (variable != variable_.GetEffectiveTerm())
+                //TODO: this is probably does not handle all the cases.
+                if (GetEffectiveTerm(variable) != GetEffectiveTerm(this.variable))
                 {
                     isInclusive = false;
                     return null;
                 }
 
-                isInclusive = isInclusive_;
-                return value_;
+                isInclusive = this.isInclusive;
+                return this.value;
+            }
+
+            private static Term GetEffectiveTerm(Variable variable)
+            {
+                Term term = variable.GetEffectiveTerm();
+                OutputVariable outputVariable = term as OutputVariable;
+                if (outputVariable != null)
+                {
+                    return GetEffectiveTerm(outputVariable.Original);
+                }
+
+                return term;
             }
         }
 
-        class ValueEntry
+        private class ValueEntry
         {
-            private CompoundTerm term_;
-            private Variable variable_;
-            private List<object> values_;
+            private CompoundTerm term;
+            private Variable variable;
+            private List<object> values;
 
             public ValueEntry(CompoundTerm term)
             {
-                term_ = term;
-                values_ = new List<object>();
+                this.term = term;
+                this.values = new List<object>();
             }
 
             public ValueEntry(CompoundTerm term, Variable variable, object value)
             {
-                term_ = term;
-                variable_ = variable;
-                values_ = new List<object>(1)
+                this.term = term;
+                this.variable = variable;
+                this.values = new List<object>(1)
                 {
                     value
                 };
@@ -80,7 +357,7 @@ namespace Guan.Logic
             {
                 get
                 {
-                    return term_;
+                    return this.term;
                 }
             }
 
@@ -91,51 +368,51 @@ namespace Guan.Logic
                     return false;
                 }
 
-                if (variable_ == null)
+                if (this.variable == null)
                 {
-                    variable_ = entry.Variable;
+                    this.variable = entry.Variable;
                 }
-                else if (variable_ != entry.Variable)
+                else if (this.variable != entry.Variable)
                 {
                     return false;
                 }
 
-                values_.Add(entry.Value);
+                this.values.Add(entry.Value);
                 return true;
             }
 
             public List<object> Get(Variable variable)
             {
-                if (variable != variable_.GetEffectiveTerm())
+                if (variable != this.variable.GetEffectiveTerm())
                 {
                     return null;
                 }
 
-                return values_;
+                return this.values;
             }
         }
 
         /// <summary>
         /// Terms like "variable comparison constant" or "constant comparison variable" only
         /// </summary>
-        class RawEntry
+        private class RawEntry
         {
-            private Variable variable_;
-            private object value_;
-            private ComparisonFunc func_;
+            private Variable variable;
+            private object value;
+            private ComparisonFunc func;
 
             private RawEntry(Variable variable, object value, ComparisonFunc func)
             {
-                variable_ = variable;
-                value_ = value;
-                func_ = func;
+                this.variable = variable;
+                this.value = value;
+                this.func = func;
             }
 
             public Variable Variable
             {
                 get
                 {
-                    return variable_;
+                    return this.variable;
                 }
             }
 
@@ -143,7 +420,7 @@ namespace Guan.Logic
             {
                 get
                 {
-                    return value_;
+                    return this.value;
                 }
             }
 
@@ -151,23 +428,7 @@ namespace Guan.Logic
             {
                 get
                 {
-                    return func_;
-                }
-            }
-
-            public void AddToConstaint(Constraint constraint, CompoundTerm term)
-            {
-                if (func_ == ComparisonFunc.EQ)
-                {
-                    constraint.AddValueEntry(new ValueEntry(term, variable_, value_));
-                }
-                else if (func_ == ComparisonFunc.LT || func_ == ComparisonFunc.LE)
-                {
-                    constraint.AddUpperBoundEntry(new BoundEntry(term, variable_, value_, func_ == ComparisonFunc.LE));
-                }
-                else if (func_ == ComparisonFunc.GT || func_ == ComparisonFunc.GE)
-                {
-                    constraint.AddLowerBoundEntry(new BoundEntry(term, variable_, value_, func_ == ComparisonFunc.GE));
+                    return this.func;
                 }
             }
 
@@ -208,272 +469,22 @@ namespace Guan.Logic
 
                 return new RawEntry(variable, constant.Value, func);
             }
-        }
 
-        private List<CompoundTerm> terms_;
-        private List<BoundEntry> lowerEntries_;
-        private List<BoundEntry> upperEnties_;
-        private List<ValueEntry> valueEntries_;
-
-        public static readonly Constraint Empty = new Constraint();
-
-        internal Constraint()
-        {
-            terms_ = new List<CompoundTerm>();
-        }
-
-        internal List<CompoundTerm> Terms
-        {
-            get
+            public void AddToConstaint(Constraint constraint, CompoundTerm term)
             {
-                return terms_;
-            }
-        }
-
-        internal void Add(CompoundTerm term)
-        {
-            Process(term);
-        }
-
-        internal void Add(IEnumerable<CompoundTerm> terms)
-        {
-            foreach (CompoundTerm term in terms)
-            {
-                Process(term);
-            }
-        }
-
-        internal int Evaluate(QueryContext context)
-        {
-            int result = 1;
-            foreach (CompoundTerm term in terms_)
-            {
-                Constant evaluted = term.Evaluate(context) as Constant;
-                if (evaluted == null)
+                if (this.func == ComparisonFunc.EQ)
                 {
-                    result = 0;
+                    constraint.AddValueEntry(new ValueEntry(term, this.variable, this.value));
                 }
-                else if (!evaluted.IsTrue())
+                else if (this.func == ComparisonFunc.LT || this.func == ComparisonFunc.LE)
                 {
-                    return -1;
+                    constraint.AddUpperBoundEntry(new BoundEntry(term, this.variable, this.value, this.func == ComparisonFunc.LE));
+                }
+                else if (this.func == ComparisonFunc.GT || this.func == ComparisonFunc.GE)
+                {
+                    constraint.AddLowerBoundEntry(new BoundEntry(term, this.variable, this.value, this.func == ComparisonFunc.GE));
                 }
             }
-
-            return result;
-        }
-
-        private void Process(CompoundTerm term)
-        {
-            EvaluatedFunctor evaluatedFunctor = term.GetEvaluatedFunctor();
-
-            bool add = true;
-            if (evaluatedFunctor != null)
-            {
-                if (evaluatedFunctor.Func is AndFunc)
-                {
-                    foreach (var arg in term.Arguments)
-                    {
-                        CompoundTerm compound = arg.Value as CompoundTerm;
-                        if (compound != null)
-                        {
-                            Process(compound);
-                        }
-                    }
-
-                    add = false;
-                }
-
-                if (evaluatedFunctor.Func is OrFunc)
-                {
-                    ValueEntry entry = new ValueEntry(term);
-                    // We will only handle disjunction of a collectoin of comparisons
-                    // with the same variable.
-                    if (DecomposeDisjunction(term, entry))
-                    {
-                        AddValueEntry(entry);
-                        add = false;
-                    }
-                }
-                else
-                {
-                    RawEntry rawEntry = RawEntry.Convert(term);
-                    if (rawEntry != null)
-                    {
-                        rawEntry.AddToConstaint(this, term);
-                    }
-                }
-            }
-
-            if (add)
-            {
-                terms_.Add(term);
-            }
-        }
-
-        private bool DecomposeDisjunction(CompoundTerm term, ValueEntry entry)
-        {
-            foreach (var arg in term.Arguments)
-            {
-                CompoundTerm compound = arg.Value as CompoundTerm;
-                if (compound == null)
-                {
-                    return false;
-                }
-
-                EvaluatedFunctor evaluatedFunctor = compound.GetEvaluatedFunctor();
-                if (evaluatedFunctor.Func is OrFunc)
-                {
-                    if (!DecomposeDisjunction(compound, entry))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    RawEntry rawEntry = RawEntry.Convert(compound);
-                    if (rawEntry == null || !entry.Add(rawEntry))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private void AddValueEntry(ValueEntry entry)
-        {
-            if (valueEntries_ == null)
-            {
-                valueEntries_ = new List<ValueEntry>();
-            }
-
-            valueEntries_.Add(entry);
-        }
-
-        private void AddUpperBoundEntry(BoundEntry entry)
-        {
-            if (upperEnties_ == null)
-            {
-                upperEnties_ = new List<BoundEntry>();
-            }
-
-            upperEnties_.Add(entry);
-        }
-
-        private void AddLowerBoundEntry(BoundEntry entry)
-        {
-            if (lowerEntries_ == null)
-            {
-                lowerEntries_ = new List<BoundEntry>();
-            }
-
-            lowerEntries_.Add(entry);
-        }
-
-        public List<object> GetValues(Variable variable, bool remove)
-        {
-            if (valueEntries_ == null)
-            {
-                return null;
-            }
-
-            List<object> result = null;
-            for (int i = valueEntries_.Count - 1; i >= 0; i--)
-            {
-                List<object> values = valueEntries_[i].Get(variable);
-                if (values != null)
-                {
-                    if (result == null)
-                    {
-                        result = values;
-                    }
-                    else
-                    {
-                        MergeValues(result, values);
-                    }
-
-                    if (remove)
-                    {
-                        terms_.Remove(valueEntries_[i].Term);
-                        valueEntries_.RemoveAt(i);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private static void MergeValues(List<object> list1, List<object> list2)
-        {
-            for (int i = list1.Count - 1; i >= 0; i--)
-            {
-                bool found = false;
-                for (int j = 0; j < list2.Count && !found; j++)
-                {
-                    found = object.Equals(list1[i], list2[j]);
-                }
-
-                if (!found)
-                {
-                    list1.RemoveAt(i);
-                }
-            }
-        }
-
-        public object GetLowerBound(Variable variable, bool remove, out bool isInclusive)
-        {
-            return GetBound(false, variable, remove, out isInclusive);
-        }
-
-        public object GetUpperBound(Variable variable, bool remove, out bool isInclusive)
-        {
-            return GetBound(true, variable, remove, out isInclusive);
-        }
-
-        private object GetBound(bool upper, Variable variable, bool remove, out bool isInclusive)
-        {
-            isInclusive = false;
-
-            List<BoundEntry> entries = (upper ? upperEnties_ : lowerEntries_);
-            if (entries == null)
-            {
-                return null;
-            }
-
-            object result = null; 
-            for (int i = entries.Count - 1; i >= 0; i--)
-            {
-                bool inclusive;
-                object value = entries[i].Get(variable, out inclusive);
-                if (value != null)
-                {
-                    if (result == null || CompareResult(value, inclusive, result, isInclusive, upper))
-                    {
-                        result = value;
-                        isInclusive = inclusive;
-                    }
-
-                    if (remove)
-                    {
-                        terms_.Remove(entries[i].Term);
-                        entries.RemoveAt(i);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private bool CompareResult(object value1, bool inclusive1, object value2, bool inclusive2, bool upper)
-        {
-            if (object.Equals(value1, value2))
-            {
-                return (!inclusive1 && inclusive2);
-            }
-
-            ComparisonFunc func = (upper ? ComparisonFunc.LT : ComparisonFunc.GT);
-            return func.Invoke(value1, value2);
         }
     }
 }

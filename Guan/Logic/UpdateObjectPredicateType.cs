@@ -2,46 +2,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Predicate type for updateobj.
     /// </summary>
     internal class UpdateObjectPredicateType : PredicateType
     {
-        class Resolver : BooleanPredicateResolver
-        {
-            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
-                : base(input, constraint, context)
-            {
-            }
-
-            protected override bool Check()
-            {
-                Term term1 = Input.Arguments[0].Value.GetEffectiveTerm();
-                IWritablePropertyContext context = term1.GetValue() as IWritablePropertyContext;
-                if (context == null)
-                {
-                    throw new GuanException("1st argument of updateobj {0} is not writable context", term1);
-                }
-
-                Constant term2 = Input.Arguments[1].Value.GetEffectiveTerm() as Constant;
-                string name = term2.GetStringValue();
-                if (name == null)
-                {
-                    throw new GuanException("2nd argument of updateobj {0} is not a string", term2);
-                }
-
-                Term term3 = Input.Arguments[2].Value.GetEffectiveTerm();
-                context[name] = term3.GetValue();
-
-                return true;
-            }
-        }
-
         public static readonly UpdateObjectPredicateType Singleton = new UpdateObjectPredicateType();
 
         private UpdateObjectPredicateType()
@@ -52,6 +21,29 @@ namespace Guan.Logic
         public override PredicateResolver CreateResolver(CompoundTerm input, Constraint constraint, QueryContext context)
         {
             return new Resolver(input, constraint, context);
+        }
+
+        private class Resolver : BooleanPredicateResolver
+        {
+            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
+                : base(input, constraint, context)
+            {
+            }
+
+            protected override Task<bool> CheckAsync()
+            {
+                Term term1 = this.GetInputArgument(0);
+                IWritablePropertyContext context = term1.GetObjectValue() as IWritablePropertyContext;
+                if (context == null)
+                {
+                    throw new GuanException("1st argument of updateobj {0} is not writable context", term1);
+                }
+
+                string name = this.GetInputArgumentString(1);
+                context[name] = this.GetInputArgumentObject(2);
+
+                return Task.FromResult(true);
+            }
         }
     }
 }

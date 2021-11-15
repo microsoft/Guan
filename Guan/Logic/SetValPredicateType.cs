@@ -2,59 +2,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Predicate type for setval.
     /// </summary>
     internal class SetValPredicateType : PredicateType
     {
-        class Resolver : BooleanPredicateResolver
-        {
-            private SetValPredicateType type_;
-            private string name_;
-            private object oldValue_;
-
-            public Resolver(SetValPredicateType type, CompoundTerm input, Constraint constraint, QueryContext context)
-                : base(input, constraint, context)
-            {
-                type_ = type;
-                name_ = Input.Arguments[0].Value.GetStringValue();
-            }
-
-            protected override bool Check()
-            {
-                if (type_ == Backtrack)
-                {
-                    oldValue_ = Context[name_];
-                }
-
-                Term term = Input.Arguments[1].Value.GetEffectiveTerm();
-                Constant constant = term as Constant;
-                if (constant == null)
-                {
-                    throw new GuanException("The 2nd argument of {0} is not a constant: {1}", type_.Name, term);
-                }
-
-                Context[name_] = constant.Value;
-
-                return true;
-            }
-
-            public override void OnBacktrack()
-            {
-                if (type_ == Backtrack)
-                {
-                    Context[name_] = oldValue_;
-                }
-            }
-        }
-
-        public static readonly SetValPredicateType Backtrack = new SetValPredicateType("setval");
-        public static readonly SetValPredicateType NoBacktrack = new SetValPredicateType("nb_setval");
+        public static readonly SetValPredicateType Backtrack = new SetValPredicateType("b_setval");
+        public static readonly SetValPredicateType NoBacktrack = new SetValPredicateType("setval");
 
         private SetValPredicateType(string name)
             : base(name, true, 2, 2)
@@ -72,6 +30,42 @@ namespace Guan.Logic
             if (name == null)
             {
                 throw new GuanException("The first argument of getval must be string: {0}", term);
+            }
+        }
+
+        private class Resolver : BooleanPredicateResolver
+        {
+            private SetValPredicateType type;
+            private string name;
+            private object oldValue;
+
+            public Resolver(SetValPredicateType type, CompoundTerm input, Constraint constraint, QueryContext context)
+                : base(input, constraint, context)
+            {
+                this.type = type;
+                this.name = this.GetInputArgumentString(0);
+            }
+
+            public override void OnBacktrack()
+            {
+                if (this.type == Backtrack)
+                {
+                    this.Context[this.name] = this.oldValue;
+                }
+            }
+
+            protected override Task<bool> CheckAsync()
+            {
+                if (this.type == Backtrack)
+                {
+                    this.oldValue = this.Context[this.name];
+                }
+
+                Term term = this.GetInputArgument(1);
+                ReleaseAssert.IsTrue(term.IsGround());
+                this.Context[this.name] = term;
+
+                return Task.FromResult(true);
             }
         }
     }

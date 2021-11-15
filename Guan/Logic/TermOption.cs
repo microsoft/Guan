@@ -2,36 +2,44 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// Execution option for goal term.
     /// </summary>
     public class TermOption
     {
-        private int max_;
-        private CompoundTerm term_;
-
         public static readonly string MaxIteration = "max";
+        public static readonly string Trace = "trace";
         public static readonly TermOption Default = new TermOption();
 
         private static readonly Functor OptionFunctor = new Functor("_option");
 
+        private int max;
+        private bool catchException;
+        private List<string> traceTypes;
+        private CompoundTerm term;
+
         public TermOption()
-            : this(new CompoundTerm(OptionFunctor))
         {
+            this.term = new CompoundTerm(OptionFunctor);
+            this.catchException = false;
         }
 
         public TermOption(CompoundTerm term)
+            : this()
         {
-            term_ = term;
-
-            object maxValue = term_[MaxIteration];
-            if (maxValue != null)
+            if (!term.IsGround())
             {
-                max_ = (int)(long)maxValue;
-                term_.RemoveArgument(MaxIteration);
+                throw new ArgumentException("Option is not ground: " + term.ToString());
+            }
+
+            foreach (TermArgument arg in term.Arguments)
+            {
+                this[arg.Name] = term[arg.Name];
             }
         }
 
@@ -39,7 +47,15 @@ namespace Guan.Logic
         {
             get
             {
-                return max_;
+                return this.max;
+            }
+        }
+
+        public bool CatchException
+        {
+            get
+            {
+                return this.catchException;
             }
         }
 
@@ -47,24 +63,50 @@ namespace Guan.Logic
         {
             get
             {
-                if (name == TermOption.MaxIteration)
+                if (name == MaxIteration)
                 {
-                    return max_;
+                    return this.max;
                 }
 
-                return term_[name];
+                return this.term[name];
             }
+
             internal set
             {
-                if (name == TermOption.MaxIteration)
+                if (name == MaxIteration)
                 {
-                    max_ = (int)value;
+                    this.max = (int)(long)value;
+                }
+                else if (name == Trace)
+                {
+                    string traceConfig = (string)value;
+                    this.traceTypes = new List<string>(traceConfig.Split(new char[] { ',' },  System.StringSplitOptions.RemoveEmptyEntries));
+                }
+                else if (name == "CatchException")
+                {
+                    this.catchException = Utility.Convert<bool>(value);
                 }
                 else
                 {
-                    term_[name] = value;
+                    this.term[name] = value;
                 }
             }
+        }
+
+        internal (bool, bool) IsTraceEnabled(string type)
+        {
+            if (this.traceTypes != null)
+            {
+                foreach (string traceType in this.traceTypes)
+                {
+                    if (type == null || traceType.Contains(type))
+                    {
+                        return (true, traceType.StartsWith("!"));
+                    }
+                }
+            }
+
+            return (false, false);
         }
     }
 }

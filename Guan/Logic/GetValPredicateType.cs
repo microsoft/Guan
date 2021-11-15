@@ -2,35 +2,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Threading.Tasks;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Predicate type for getval.
     /// </summary>
     internal class GetValPredicateType : PredicateType
     {
-        class Resolver : GroundPredicateResolver
-        {
-            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
-                : base(input, constraint, context, 1)
-            {
-            }
-
-            protected override Task<Term> GetNextTermAsync()
-            {
-                string name = Input.Arguments[0].Value.GetStringValue();
-                object value = Context[name];
-
-                CompoundTerm result = new CompoundTerm(GetValPredicateType.Singleton, null);
-                result.AddArgument(new Constant(value), "1");
-                return Task.FromResult<Term>(result);
-            }
-        }
-
         public static readonly GetValPredicateType Singleton = new GetValPredicateType();
 
         private GetValPredicateType()
@@ -54,6 +34,28 @@ namespace Guan.Logic
             if (!(term.Arguments[1].Value is IndexedVariable))
             {
                 throw new GuanException("The second argument of getval must be a variable: {0}", term);
+            }
+        }
+
+        private class Resolver : GroundPredicateResolver
+        {
+            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
+                : base(input, constraint, context, 1)
+            {
+            }
+
+            protected override Task<Term> GetNextTermAsync()
+            {
+                string name = this.GetInputArgumentString(0);
+                Term value = (Term)this.Context[name];
+
+                CompoundTerm result = new CompoundTerm(GetValPredicateType.Singleton, null);
+                if (value != null)
+                {
+                    result.AddArgument(value, "1");
+                }
+
+                return Task.FromResult<Term>(result);
             }
         }
     }

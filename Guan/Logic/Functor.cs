@@ -2,48 +2,71 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text.RegularExpressions;
+
     /// <summary>
     /// Functor for compound term.
     /// </summary>
     public class Functor
     {
-        private string name_;
-        private List<KeyValuePair<string, ArgumentDescription>> args_;
-        private List<string> requiredArguments_;
+        public static readonly Functor ClassObject = new Functor("object");
+        public static readonly Functor Empty = new Functor(string.Empty);
 
         private static readonly Regex NamePattern = new Regex(@"^[_\w]+$", RegexOptions.Compiled);
-        private static readonly List<KeyValuePair<string, ArgumentDescription>> EmptyArgs = new List<KeyValuePair<string, ArgumentDescription>>();
         private static readonly List<string> EmptyRequiredArgs = new List<string>();
 
-        public static readonly Functor ClassObject = new Functor("object");
-        public static readonly Functor Empty = new Functor("");
+        private string name;
+        private Type unificationType;
+        private List<KeyValuePair<string, ArgumentDescription>> args;
+        private List<string> requiredArguments;
 
         public Functor(string name)
         {
-            name_ = name;
-            args_ = EmptyArgs;
-            requiredArguments_ = EmptyRequiredArgs;
+            this.name = name;
+        }
+
+        internal Functor(Type type)
+        {
+            this.name = type.Name;
+            this.unificationType = type;
         }
 
         public string Name
         {
             get
             {
-                return name_;
+                return this.name;
+            }
+        }
+
+        public List<string> RequiredArguments
+        {
+            get
+            {
+                return this.requiredArguments ?? EmptyRequiredArgs;
+            }
+        }
+
+        internal Type UnificationType
+        {
+            get
+            {
+                return this.unificationType;
             }
         }
 
         public ArgumentDescription GetArgumentDescription(string name)
         {
-            foreach (var arg in args_)
+            if (this.args == null)
+            {
+                return null;
+            }
+
+            foreach (KeyValuePair<string, ArgumentDescription> arg in this.args)
             {
                 if (arg.Key == name)
                 {
@@ -54,57 +77,45 @@ namespace Guan.Logic
             return null;
         }
 
-        public List<string> RequiredArguments
-        {
-            get
-            {
-                return requiredArguments_;
-            }
-        }
-
         public void AddArgumentDescription(string name, ArgumentDescription arg)
         {
-            if (GetArgumentDescription(name) != null)
+            if (this.GetArgumentDescription(name) != null)
             {
                 throw new GuanException("Duplicate argument description for {0} in {1}", name, this);
             }
 
-            if (args_ == EmptyArgs)
+            if (this.args == null)
             {
-                args_ = new List<KeyValuePair<string, ArgumentDescription>>();
+                this.args = new List<KeyValuePair<string, ArgumentDescription>>();
             }
 
-            args_.Add(new KeyValuePair<string, ArgumentDescription>(name, arg));
+            this.args.Add(new KeyValuePair<string, ArgumentDescription>(name, arg));
 
             if (arg.Required)
             {
-                if (requiredArguments_ == EmptyRequiredArgs)
+                if (this.requiredArguments == null)
                 {
-                    requiredArguments_ = new List<string>();
+                    this.requiredArguments = new List<string>();
                 }
-                requiredArguments_.Add(name);
-            }
-        }
 
-        public virtual bool Unify(Functor other)
-        {
-            return (name_ == other.name_);
+                this.requiredArguments.Add(name);
+            }
         }
 
         public override bool Equals(object obj)
         {
             Functor other = obj as Functor;
-            return (other != null && name_ == other.name_);
+            return (other != null && this.name == other.name);
         }
 
         public override int GetHashCode()
         {
-            return name_.GetHashCode();
+            return this.name.GetHashCode();
         }
 
         public override string ToString()
         {
-            return name_;
+            return this.name;
         }
 
         internal static Functor Parse(string name)

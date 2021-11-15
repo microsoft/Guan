@@ -2,38 +2,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Threading.Tasks;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Predicate type for "not".
     /// </summary>
     internal class NotPredicateType : PredicateType
     {
-        class Resolver : PredicateResolver
-        {
-            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
-                : base(input, constraint, context, 1)
-            {
-            }
-
-            public override async Task<UnificationResult> OnGetNextAsync()
-            {
-                CompoundTerm goal = (CompoundTerm)Input.Arguments[0].Value;
-                PredicateResolver resolver = goal.PredicateType.CreateResolver(goal, Constraint, Context);
-                UnificationResult result = await resolver.GetNextAsync();
-                if (result == null)
-                {
-                    return UnificationResult.Empty;
-                }
-
-                return null;
-            }
-        }
-
         public static readonly NotPredicateType Singleton = new NotPredicateType();
 
         private static readonly EvaluatedFunctor NotConstraint = new EvaluatedFunctor(NotFunc.Singleton);
@@ -65,6 +42,27 @@ namespace Guan.Logic
             else if (!(goal.Functor is PredicateType))
             {
                 throw new GuanException("Predicate type {0} in {1} is not defined", goal.Functor.Name, term);
+            }
+        }
+
+        private class Resolver : PredicateResolver
+        {
+            public Resolver(CompoundTerm input, Constraint constraint, QueryContext context)
+                : base(input, constraint, context, 1)
+            {
+            }
+
+            public override async Task<UnificationResult> OnGetNextAsync()
+            {
+                CompoundTerm goal = (CompoundTerm)this.Input.Arguments[0].Value;
+                PredicateResolver resolver = goal.PredicateType.CreateResolver(goal, this.Constraint, this.Context);
+                UnificationResult result = await resolver.GetNextAsync();
+                if (result == null)
+                {
+                    return UnificationResult.Empty;
+                }
+
+                return null;
             }
         }
     }

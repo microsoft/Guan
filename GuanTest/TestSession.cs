@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
-using Guan.Common;
+using Guan.Logic;
 
 namespace GuanTest
 {
@@ -347,19 +346,11 @@ namespace GuanTest
             //
             if (src.StartsWith(ErrorReport))
             {
-                EventLog.WriteError(TraceSession + "." + src, format, args);
-            }
-            else if (src == ResultReport)
-            {
-                EventLog.WriteInfo1(TraceSession + "." + src, format, args);
-            }
-            else if (src == SystemReport)
-            {
-                EventLog.WriteInfo2(TraceSession + "." + src, format, args);
+                EventLogWriter.WriteError(format, args);
             }
             else
             {
-                EventLog.WriteInfo(TraceSession + "." + src, format, args);
+                EventLogWriter.WriteInfo(format, args);
             }
         }
 
@@ -612,7 +603,7 @@ namespace GuanTest
             //
             if (m_commands.Count > 0)
             {
-                EventLog.WriteInfo2(TraceSession + ".Command", "{0}", m_commands.Peek());
+                EventLogWriter.WriteInfo("{0}", m_commands.Peek());
                 if (m_stepMode)
                 {
                     Console.WriteLine("Press enter to execute...");
@@ -645,27 +636,6 @@ namespace GuanTest
             }
 
             return m_commands.Dequeue();
-        }
-
-        private void SetConfig(string param)
-        {
-            string key;
-            string value;
-
-            int index = param.IndexOf('=');
-            if (index < 0)
-            {
-                key = param;
-                value = string.Empty;
-            }
-            else
-            {
-                key = param.Substring(0, index);
-                value = param.Substring(index + 1);
-            }
-
-            ConfigurationManager.AppSettings[key] = value;
-            EventLog.RefreshConfig();
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031", Justification = "Report exception to user to allow troubleshooting without bring down the process.")]
@@ -731,9 +701,6 @@ namespace GuanTest
                         break;
                     case "step":
                         Utility.TryParse(param, out m_stepMode);
-                        break;
-                    case "config":
-                        SetConfig(param);
                         break;
                     case "gc":
                         GC.Collect();

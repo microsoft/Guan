@@ -2,92 +2,85 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Class for a query on some pre-defined predicate type.
     /// </summary>
     public class Query
     {
-        class QueryPredicateType : PredicateType
-        {
-            private CompoundTerm input_;
-
-            public QueryPredicateType()
-                : base(QueryTypeName)
-            {
-            }
-
-            public CompoundTerm Input
-            {
-                get
-                {
-                    return input_;
-                }
-            }
-
-            public override void AdjustTerm(CompoundTerm term, Rule rule)
-            {
-                ReleaseAssert.IsTrue(term == rule.Head && input_ == null);
-
-                foreach (string name in rule.VariableTable)
-                {
-                    rule.AddArgument(term, "?" + name, name);
-                }
-
-                VariableBinding binding = rule.CreateBinding(0);
-                input_ = term.DuplicateGoal(binding);
-            }
-
-            public override string ToString()
-            {
-                return string.Empty;
-            }
-        }
-
-        class Provider : IFunctorProvider
-        {
-            private IFunctorProvider provider_;
-            private QueryPredicateType type_;
-
-            public Provider(IFunctorProvider provider, QueryPredicateType type)
-            {
-                provider_ = provider;
-                type_ = type;
-            }
-
-            public Functor FindFunctor(string name, Module from)
-            {
-                if (name == QueryTypeName)
-                {
-                    return type_;
-                }
-
-                if (provider_ != null)
-                {
-                    return provider_.FindFunctor(name, from);
-                }
-
-                return null;
-            }
-        }
-
-        private CompoundTerm input_;
-        private PredicateResolver resolver_;
-
         private const string QueryTypeName = "__query";
+
+        private CompoundTerm input;
+        private PredicateResolver resolver;
 
         private Query(QueryPredicateType queryType, QueryContext queryContext)
         {
-            input_ = queryType.Input;
-            input_.Binding.MoveNext();
-            resolver_ = queryType.CreateResolver(input_, Constraint.Empty, queryContext);
+            this.input = queryType.Input;
+            this.input.Binding.MoveNext();
+            this.resolver = queryType.CreateResolver(this.input, Constraint.Empty, queryContext);
+        }
+
+        public static Query Create(string text, QueryContext queryContext, IFunctorProvider provider)
+        {
+            if (text.Contains(":-"))
+            {
+                throw new ArgumentException("Query can't contain head: " + text);
+            }
+
+            QueryPredicateType queryType = new QueryPredicateType();
+
+            List<string> types = new List<string>();
+            types.Add(QueryTypeName);
+            List<string> rules = new List<string>();
+            rules.Add(QueryTypeName + " :- " + text);
+            Module module = Module.Parse("query", rules, new Provider(provider, queryType), types);
+            return new Query(queryType, queryContext);
+        }
+
+        public static Query Create(List<CompoundTerm> terms, QueryContext queryContext, IFunctorProvider provider)
+        {
+            if (terms == null || terms.Count == 0)
+            {
+                throw new ArgumentException("terms");
+            }
+
+            CompoundTerm body = terms[terms.Count - 1];
+            for (int i = terms.Count - 2; i >= 0; i--)
+            {
+                CompoundTerm current = body;
+                body = new CompoundTerm(",");
+                body.AddArgument(terms[i], "0");
+                body.AddArgument(current, "1");
+            }
+
+            QueryPredicateType queryType = new QueryPredicateType();
+
+            CompoundTerm ruleTerm = new CompoundTerm(":-");
+            ruleTerm.AddArgument(new CompoundTerm(QueryTypeName), "0");
+            ruleTerm.AddArgument(body, "1");
+
+            List<string> types = new List<string>()
+            { 
+                QueryTypeName
+            };
+
+            List<Rule> rules = new List<Rule>()
+            {
+                Rule.Parse(ruleTerm, ruleTerm.ToString())
+            };
+
+            _ = Module.Parse("query", rules, new Provider(provider, queryType), types);
+            return new Query(queryType, queryContext);
+        }
+
+        public bool SetLocalVariables(string name, Term value)
+        {
+            return this.input.Binding.SetLocalVariableValue(name, value);
         }
 
         public async Task<List<Term>> GetResultsAsync(int maxCount)
@@ -95,7 +88,7 @@ namespace Guan.Logic
             List<Term> result = new List<Term>();
             while (result.Count < maxCount)
             {
-                Term term = await GetNextAsync();
+                Term term = await this.GetNextAsync();
                 if (term == null)
                 {
                     return result;
@@ -109,79 +102,88 @@ namespace Guan.Logic
 
         public async Task<Term> GetNextAsync()
         {
-            if (resolver_.Iteration > 0)
-            {
-                input_.Binding.MovePrev();
-            }
-
-            UnificationResult result = await resolver_.GetNextAsync();
+            UnificationResult result = await this.GetNextResultAsync();
             if (result == null)
             {
                 return null;
             }
 
-            result.Apply(input_.Binding);
-            input_.Binding.MoveNext();
-            return input_;
+            result.Apply(this.input.Binding);
+            this.input.Binding.MoveNext();
+            return this.input;
         }
 
-        public static Query Create(string text, QueryContext queryContext, IFunctorProvider provider)
+        public Task<UnificationResult> GetNextResultAsync()
         {
-            if (text.Contains(":-"))
+            if (this.resolver.Iteration > 0)
             {
-                throw new ArgumentException("Query can't contain head: " + text);
+                _ = this.input.Binding.MovePrev();
             }
 
-            QueryPredicateType queryType = new QueryPredicateType();
-
-            List<string> types = new List<string>
-            {
-                QueryTypeName
-            };
-            List<string> rules = new List<string>
-            {
-                QueryTypeName + " :- " + text
-            };
-
-            _ = Module.Parse("query", rules, new Provider(provider, queryType), types);
-            
-            return new Query(queryType, queryContext);
+            return this.resolver.GetNextAsync();
         }
 
-        public static Query Create(List<CompoundTerm> terms, QueryContext queryContext, IFunctorProvider provider)
+        private class QueryPredicateType : PredicateType
         {
-            if (terms == null || terms.Count == 0)
+            private CompoundTerm input;
+
+            public QueryPredicateType()
+                : base(QueryTypeName)
             {
-                throw new ArgumentException("terms");
             }
 
-            CompoundTerm body = terms[terms.Count - 1];
-           
-            for (int i = terms.Count - 2; i >= 0; i--)
+            public CompoundTerm Input
             {
-                CompoundTerm current = body;
-                body = new CompoundTerm(",");
-                body.AddArgument(terms[i], "0");
-                body.AddArgument(current, "1");
+                get
+                {
+                    return this.input;
+                }
             }
 
-            QueryPredicateType queryType = new QueryPredicateType();
-            CompoundTerm ruleTerm = new CompoundTerm(":-");
-            ruleTerm.AddArgument(new CompoundTerm(QueryTypeName), "0");
-            ruleTerm.AddArgument(body, "1");
-
-            List<string> types = new List<string>
+            public override void AdjustTerm(CompoundTerm term, Rule rule)
             {
-                QueryTypeName
-            };
-            List<Rule> rules = new List<Rule>
-            {
-                Rule.Parse(ruleTerm, ruleTerm.ToString())
-            };
+                ReleaseAssert.IsTrue(term == rule.Head && this.input == null);
 
-            _ = Module.Parse("query", rules, new Provider(provider, queryType), types);
-            
-            return new Query(queryType, queryContext);
+                foreach (string name in rule.VariableTable)
+                {
+                    rule.AddArgument(term, "?" + name, name);
+                }
+
+                VariableBinding binding = rule.CreateBinding(0);
+                this.input = term.DuplicateGoal(binding);
+            }
+
+            public override string ToString()
+            {
+                return string.Empty;
+            }
+        }
+
+        private class Provider : IFunctorProvider
+        {
+            private IFunctorProvider provider;
+            private QueryPredicateType type;
+
+            public Provider(IFunctorProvider provider, QueryPredicateType type)
+            {
+                this.provider = provider;
+                this.type = type;
+            }
+
+            public Functor FindFunctor(string name, Module from)
+            {
+                if (name == QueryTypeName)
+                {
+                    return this.type;
+                }
+
+                if (this.provider != null)
+                {
+                    return this.provider.FindFunctor(name, from);
+                }
+
+                return null;
+            }
         }
     }
 }

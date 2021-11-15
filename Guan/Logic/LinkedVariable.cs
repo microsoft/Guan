@@ -2,54 +2,38 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
 namespace Guan.Logic
 {
     /// <summary>
     /// A variable bound to another variable.
     /// </summary>
-    public class LinkedVariable : Variable
+    internal class LinkedVariable : Variable
     {
-        private Variable original_;
+        private Variable original;
 
         public LinkedVariable(VariableBinding binding, Variable original, string name)
             : base(name, binding)
         {
-            original_ = original;
+            this.original = original;
         }
 
         public LinkedVariable(LinkedVariable other, VariableBinding binding)
             : base(other, binding)
         {
-            original_ = other.original_;
+            this.original = other.original;
         }
 
         public Variable Original
         {
             get
             {
-                return original_;
+                return this.original;
             }
+
             set
             {
-                original_ = value;
+                this.original = value;
             }
-        }
-    }
-
-    /// <summary>
-    /// Variable output from a goal to the rule.
-    /// </summary>
-    public class OutputVariable : LinkedVariable
-    {
-        public OutputVariable(VariableBinding binding, Variable original, string name)
-            : base(binding, original, name)
-        {
-        }
-
-        public OutputVariable(OutputVariable other, VariableBinding binding)
-            : base(other, binding)
-        {
         }
     }
 }

@@ -2,143 +2,147 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
-
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Guan.Common;
-
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Resolver using rules. This is typical case except for external predicates.
     /// </summary>
     internal class RulePredicateResolver : PredicateResolver
     {
-        private Module module_;
-        private List<Rule> rules_;
-        private bool singleActivation_;
-        private Rule currentRule_;
-        private int ruleIndex_;
-        private VariableBinding binding_;
-        private VariableBinding tail_;
-        private PredicateResolver[] resolvers_;
-        private Constraint[] constraints_;
-        private List<Task<UnificationResult>> tasks_;
+        private Module module;
+        private List<Rule> rules;
+        private bool singleActivation;
+        private Rule currentRule;
+        private int ruleIndex;
+        private VariableBinding binding;
+        private VariableBinding tail;
+        private PredicateResolver[] resolvers;
+        private Constraint[] constraints;
+        private List<Task<UnificationResult>> tasks;
 
         public RulePredicateResolver(Module module, List<Rule> rules, bool singleActivation, CompoundTerm input, Constraint constraint, QueryContext context)
             : base(input, constraint, context)
         {
-            module_ = module;
-            rules_ = rules;
-            singleActivation_ = singleActivation;
-            ruleIndex_ = 0;
+            this.module = module;
+            this.rules = rules;
+            this.singleActivation = singleActivation;
+            this.ruleIndex = 0;
         }
 
         public override async Task<UnificationResult> OnGetNextAsync()
         {
-            if (binding_ != null)
+            if (this.binding != null)
             {
                 // when tail optimization is effective, both binding need to backtrack.
-                if (tail_ != null)
+                if (this.tail != null)
                 {
-                    tail_.MovePrev();
+                    _ = this.tail.MovePrev();
                 }
 
-                Backtrack();
+                this.Backtrack();
             }
 
-            while (ruleIndex_ < rules_.Count)
+            while (this.ruleIndex < this.rules.Count)
             {
-                if (binding_ == null)
+                if (this.binding == null)
                 {
-                    if (InitializeRule())
+                    if (this.InitializeRule())
                     {
-                        binding_.MoveNext();
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                        this.binding.MoveNext();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
                     else
                     {
-                        ruleIndex_++;
+                        this.ruleIndex++;
                     }
                 }
                 else
                 {
-                    int currentIndex = binding_.CurrentIndex;
-                    if (currentIndex == currentRule_.Goals.Count)
+                    int currentIndex = this.binding.CurrentIndex;
+                    if (currentIndex == this.currentRule.Goals.Count)
                     {
-                        UnificationResult result = binding_.CreateOutput();
+                        UnificationResult result = this.binding.CreateOutput();
                         // When tail optimization is effective, the output is a two-stage
                         // process: we use the current binding output to update tail_ and
                         // then the real output is from _tail.
-                        if (tail_ != null)
+                        if (this.tail != null)
                         {
-                            result.Apply(tail_);
-                            tail_.MoveNext();
-                            WriteTrace("T-Exit");
-                            result = tail_.CreateOutput();
+                            result.Apply(this.tail);
+                            this.tail.MoveNext();
+                            this.WriteTrace("T-Exit");
+                            result = this.tail.CreateOutput();
+                        }
+
+                        if (!this.Completed && this.IsCompleted(this.currentRule.Goals.Count - 1))
+                        {
+                            this.Complete();
                         }
 
                         return result;
                     }
 
-                    if (resolvers_[currentIndex] == null)
+                    if (this.resolvers[currentIndex] == null)
                     {
-                        resolvers_[currentIndex] = CreateResolver(currentIndex);
-                        if (currentRule_.Goals[currentIndex].PredicateType is CutPredicateType)
+                        this.resolvers[currentIndex] = this.CreateResolver(currentIndex);
+                        if (this.currentRule.Goals[currentIndex].PredicateType is CutPredicateType)
                         {
                             for (int i = currentIndex - 1; i >= 0; i--)
                             {
-                                resolvers_[i].Cancel();
+                                this.resolvers[i].Cancel();
                             }
                         }
 
-                        if (currentIndex == currentRule_.Goals.Count - 1 && !Context.EnableDebug && OptimizeTail())
+                        if (currentIndex == this.currentRule.Goals.Count - 1 && !this.Context.EnableDebug && this.OptimizeTail())
                         {
-                            WriteTrace("T-Call");
+                            this.WriteTrace("T-Call");
                             continue;
                         }
                     }
 
-                    resolvers_[currentIndex].WriteTrace("Call");
+                    this.resolvers[currentIndex].WriteTrace("Call");
 
                     UnificationResult goalResult;
-                    if (tasks_ == null || tasks_.Count == 0)
+                    if (this.tasks == null || this.tasks.Count == 0)
                     {
-                        goalResult = await resolvers_[currentIndex].GetNextAsync();
+                        goalResult = await this.resolvers[currentIndex].GetNextAsync();
                     }
                     else
                     {
                         // When backtracked to a goal (so that its iteration is not 0),
                         // if it is a goal immediately before a forward cut, the task for
                         // this goal is already initiated and in the tasks_ collection.
-                        if ((currentIndex + 1 == currentRule_.Goals.Count) ||
-                            (resolvers_[currentIndex].Iteration == 0) ||
-                            !(currentRule_.Goals[currentIndex + 1].PredicateType is ForwardCutPredicateType))
+                        if ((currentIndex + 1 == this.currentRule.Goals.Count) ||
+                            (this.resolvers[currentIndex].Iteration == 0) ||
+                            !(this.currentRule.Goals[currentIndex + 1].PredicateType is ForwardCutPredicateType))
                         {
-                            tasks_.Add(resolvers_[currentIndex].GetNextAsync());
+                            this.tasks.Add(this.resolvers[currentIndex].GetNextAsync());
                         }
 
                         while (true)
                         {
-                            Task<UnificationResult> completedTask = await Task.WhenAny(tasks_);
-                            goalResult = completedTask.Result;
-                            if (completedTask == tasks_[tasks_.Count - 1])
+                            Task<UnificationResult> completedTask = await Task.WhenAny(this.tasks);
+                            goalResult = await completedTask;
+                            if (completedTask == this.tasks[this.tasks.Count - 1])
                             {
-                                tasks_.RemoveAt(tasks_.Count - 1);
+                                this.tasks.RemoveAt(this.tasks.Count - 1);
                                 break;
                             }
-
-                            if (goalResult != null)
+                            else if (goalResult != null)
                             {
                                 // If an earlier parallel task is completed, cancel all tasks after
                                 // it.
-                                int index = tasks_.IndexOf(completedTask);
-                                int count = tasks_.Count - index;
+                                int index = this.tasks.IndexOf(completedTask);
+                                int count = this.tasks.Count - index;
                                 for (; currentIndex > 0 && count > 1; currentIndex--)
                                 {
-                                    resolvers_[currentIndex].Context.IsCancelled = true;
-                                    resolvers_[currentIndex] = null;
+                                    this.resolvers[currentIndex].Context.IsCancelled = true;
+                                    this.resolvers[currentIndex] = null;
 
-                                    if (currentRule_.Goals[currentIndex].PredicateType is ForwardCutPredicateType)
+                                    if (this.currentRule.Goals[currentIndex].PredicateType is ForwardCutPredicateType)
                                     {
                                         count--;
                                     }
@@ -146,41 +150,44 @@ namespace Guan.Logic
 
                                 ReleaseAssert.IsTrue(count == 1);
 
-                                tasks_.RemoveRange(index, tasks_.Count - index);
-                                binding_ = resolvers_[currentIndex].Input.Binding;
+                                this.tasks.RemoveRange(index, this.tasks.Count - index);
+                                this.binding = this.resolvers[currentIndex].Input.Binding;
 
                                 break;
                             }
-                            tasks_.Remove(completedTask);
+                            else
+                            {
+                                _ = this.tasks.Remove(completedTask);
+                            }
                         }
                     }
 
                     if (goalResult != null)
                     {
-                        goalResult.Apply(binding_);
-                        bool proceed = UpdateConstraints(goalResult);
-                        binding_.MoveNext();
+                        goalResult.Apply(this.binding);
+                        bool proceed = this.UpdateConstraints(goalResult);
+                        this.binding.MoveNext();
 
                         if (proceed)
                         {
-                            resolvers_[currentIndex].WriteTrace("Exit");
+                            this.resolvers[currentIndex].WriteTrace("Exit");
                         }
                         else
                         {
-                            Backtrack();
+                            this.Backtrack();
                         }
                     }
-                    else if (currentRule_.Goals[currentIndex].PredicateType is ForwardCutPredicateType)
+                    else if (this.currentRule.Goals[currentIndex].PredicateType is ForwardCutPredicateType)
                     {
-                        resolvers_[currentIndex] = null;
+                        this.resolvers[currentIndex] = null;
                         currentIndex--;
-                        binding_ = resolvers_[currentIndex].Input.Binding;
-                        resolvers_[currentIndex].Context.ClearChildren();
+                        this.binding = this.resolvers[currentIndex].Input.Binding;
+                        this.resolvers[currentIndex].Context.ClearChildren();
                     }
                     else
                     {
-                        resolvers_[currentIndex].WriteTrace("Fail");
-                        Backtrack();
+                        this.resolvers[currentIndex].WriteTrace("Fail");
+                        this.Backtrack();
                     }
                 }
             }
@@ -190,19 +197,19 @@ namespace Guan.Logic
 
         private bool InitializeRule()
         {
-            currentRule_ = rules_[ruleIndex_];
-            binding_ = currentRule_.CreateBinding(Input.Binding.Level + 1);
-            if (!binding_.Unify(currentRule_.Head.DuplicateGoal(binding_), Input))
+            this.currentRule = this.rules[this.ruleIndex];
+            this.binding = this.currentRule.CreateBinding(this.Input.Binding.Level + 1);
+            if (!this.binding.Unify(this.currentRule.Head.DuplicateGoal(this.binding), this.Input))
             {
-                binding_ = null;
+                this.binding = null;
                 return false;
             }
 
-            resolvers_ = new PredicateResolver[currentRule_.Goals.Count];
-            constraints_ = new Constraint[currentRule_.Goals.Count];
-            if (currentRule_.Goals.Count > 0)
+            this.resolvers = new PredicateResolver[this.currentRule.Goals.Count];
+            this.constraints = new Constraint[this.currentRule.Goals.Count];
+            if (this.currentRule.Goals.Count > 0)
             {
-                constraints_[0] = Constraint;
+                this.constraints[0] = this.Constraint;
             }
 
             return true;
@@ -210,36 +217,36 @@ namespace Guan.Logic
 
         private PredicateResolver CreateResolver(int index)
         {
-            CompoundTerm goal = currentRule_.Goals[index];
+            CompoundTerm goal = this.currentRule.Goals[index];
 
             QueryContext context = null;
             for (int i = index - 1; i >= 0 && context == null; i--)
             {
-                context = resolvers_[i].Context;
+                context = this.resolvers[i].Context;
             }
 
             if (context == null)
             {
-                context = Context;
+                context = this.Context;
             }
 
             // For forwardcut, the context will be a child to the context for the goal
             // immediately before it.
-            if (currentRule_.Goals[index].PredicateType is ForwardCutPredicateType && index > 0 && !resolvers_[index - 1].Completed)
+            if (this.currentRule.Goals[index].PredicateType is ForwardCutPredicateType && index > 0 && !this.resolvers[index - 1].Completed)
             {
-                if (tasks_ == null)
+                if (this.tasks == null)
                 {
-                    tasks_ = new List<Task<UnificationResult>>();
+                    this.tasks = new List<Task<UnificationResult>>();
                 }
 
-                VariableBinding currentBinding = binding_;
-                binding_ = new VariableBinding(binding_);
-                currentBinding.MovePrev();
+                VariableBinding currentBinding = this.binding;
+                this.binding = new VariableBinding(this.binding);
+                _ = currentBinding.MovePrev();
                 context = context.CreateChild();
-                tasks_.Add(resolvers_[index - 1].GetNextAsync());
+                this.tasks.Add(this.resolvers[index - 1].GetNextAsync());
             }
 
-            PredicateResolver result = goal.PredicateType.CreateResolver(goal.DuplicateGoal(binding_), constraints_[index], context);
+            PredicateResolver result = goal.PredicateType.CreateResolver(goal.DuplicateGoal(this.binding), this.constraints[index], context);
             if (result == null)
             {
                 throw new GuanException("No resolver defined for {0}", goal.PredicateType);
@@ -250,15 +257,15 @@ namespace Guan.Logic
 
         private bool UpdateConstraints(UnificationResult result)
         {
-            int currentIndex = binding_.CurrentIndex;
-            Constraint current = constraints_[currentIndex];
+            int currentIndex = this.binding.CurrentIndex;
+            Constraint current = this.constraints[currentIndex];
             Constraint next;
 
             // The constraints propagated to the next goal comes from two sources:
             // One is the constraints from the current goal (the ones remaining after
             // applying the output from the current goal, second is the constraints
             // added by the current goal.
-            if (currentIndex == currentRule_.Goals.Count - 1)
+            if (currentIndex == this.currentRule.Goals.Count - 1)
             {
                 next = null;
             }
@@ -271,14 +278,14 @@ namespace Guan.Logic
             {
                 next = current;
             }
-            
+
             // At this point, next is either the same as currennt, or contains nothing
             // from current.
             if (!result.IsEmpty)
             {
                 for (int i = 0; i < current.Terms.Count; i++)
                 {
-                    Constant evaluted = current.Terms[i].Evaluate(Context) as Constant;
+                    Constant evaluted = current.Terms[i].Evaluate(this.Context) as Constant;
                     if (evaluted == null)
                     {
                         if (next != current && next != null)
@@ -309,7 +316,7 @@ namespace Guan.Logic
 
             if (next != null)
             {
-                constraints_[currentIndex + 1] = next;
+                this.constraints[currentIndex + 1] = next;
             }
 
             return true;
@@ -317,101 +324,108 @@ namespace Guan.Logic
 
         private void Backtrack()
         {
-            int currentIndex = binding_.CurrentIndex;
-            if (currentIndex < resolvers_.Length && resolvers_[currentIndex] != null)
+            int currentIndex = this.binding.CurrentIndex;
+            if (currentIndex < this.resolvers.Length && this.resolvers[currentIndex] != null)
             {
-                resolvers_[currentIndex].OnBacktrack();
-                resolvers_[currentIndex] = null;
+                this.resolvers[currentIndex].OnBacktrack();
+                this.resolvers[currentIndex] = null;
             }
 
-            if (binding_.MovePrev())
+            if (this.binding.MovePrev())
             {
-                if (currentRule_.Goals[currentIndex - 1].Functor is CutPredicateType)
+                if (this.currentRule.Goals[currentIndex - 1].Functor is CutPredicateType)
                 {
-                    ruleIndex_ = rules_.Count;
+                    this.ruleIndex = this.rules.Count;
                 }
             }
-            else if (singleActivation_ && Iteration > 0)
+            else if (this.singleActivation && this.Iteration > 0)
             {
-                ruleIndex_ = rules_.Count;
+                this.ruleIndex = this.rules.Count;
             }
             else
             {
-                ruleIndex_++;
-                binding_ = null;
+                this.ruleIndex++;
+                this.binding = null;
             }
         }
 
         private bool OptimizeTail()
         {
-            int index = currentRule_.Goals.Count - 1;
-            RulePredicateResolver ruleResolver = resolvers_[index] as RulePredicateResolver;
+            if (this.Input.Option.IsTraceEnabled(null).Item1)
+            {
+                return false;
+            }
+
+            int index = this.currentRule.Goals.Count - 1;
+            RulePredicateResolver ruleResolver = this.resolvers[index] as RulePredicateResolver;
             // We can optimize if the goal is defined by rule and it does not require us
             // to maintain different Max count.
-            if (ruleResolver == null || ruleResolver.Max != Max)
+            if (ruleResolver == null || ruleResolver.Max != this.Max)
             {
                 return false;
             }
 
             // TODO: allow optimization when there is constraint
-            if (constraints_[index].Terms.Count > 0)
+            if (this.constraints[index].Terms.Count > 0)
             {
                 return false;
             }
 
-            // Find the previous incomplete goal or cut.
-            bool cut = false;
-            bool incomplete = false;
-            for (int i = index - 1; i >= 0 && !cut && !incomplete; i--)
+            if (!this.IsCompleted(index - 1))
             {
-                if (currentRule_.Goals[i].Functor == CutPredicateType.Singleton)
+                return false;
+            }
+
+            this.UpdateTail(ruleResolver);
+            this.Load(ruleResolver);
+
+            return true;
+        }
+
+        private bool IsCompleted(int index)
+        {
+            for (int i = index; i >= 0; i--)
+            {
+                if (this.currentRule.Goals[i].Functor == CutPredicateType.Singleton)
                 {
-                    cut = true;
+                    return true;
                 }
-                else if (!resolvers_[i].Completed)
+                else if (!this.resolvers[i].Completed)
                 {
-                    incomplete = true;
+                    return false;
                 }
             }
 
-            // Optimize if cut or this is the last goal for the predicate
-            bool result = (cut || (!incomplete && ruleIndex_ == rules_.Count - 1));
-            if (result)
-            {
-                UpdateTail(ruleResolver);
-                Load(ruleResolver);
-            }
-
-            return result;
+            return (this.ruleIndex == this.rules.Count - 1);
         }
 
         private void UpdateTail(RulePredicateResolver resolver)
         {
-            if (tail_ == null)
+            if (this.tail == null)
             {
-                tail_ = binding_;
+                this.tail = this.binding;
             }
             else
             {
                 // Use whatever output we have currently to update _tail
-                UnificationResult result = binding_.CreateOutput();
-                result.Apply(tail_);
+                UnificationResult result = this.binding.CreateOutput();
+                result.Apply(this.tail);
                 // The input to the next goal is for the current bining, we need t
                 // update so that it uses tail_.
-                resolver.Input.Migrate(tail_);
+                resolver.Input.Migrate(this.tail);
             }
 
-            tail_.ResetTail();
-            binding_ = null;
+            this.tail.ResetTail();
+            this.binding = null;
         }
 
         private void Load(RulePredicateResolver resolver)
         {
-            Input = resolver.Input;
-            Iteration = 0;
-            module_ = resolver.module_;
-            rules_ = resolver.rules_;
-            ruleIndex_ = 0;
+            this.Input = resolver.Input;
+            this.Iteration = 0;
+            this.module = resolver.module;
+            this.rules = resolver.rules;
+            this.ruleIndex = 0;
         }
     }
 }
