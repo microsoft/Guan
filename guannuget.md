@@ -1,6 +1,6 @@
 # Guan
 
-![Alt text](/icon.png "guan")
+![Alt text](https://raw.githubusercontent.com/microsoft/Guan/main/icon.png "guan")
 
 Guan (to observe in Mandarin) is a general-purpose logic programming system written in C# and built as a .NET Standard Library. It has been tested in both Windows and Linux environments. 
 
@@ -32,7 +32,7 @@ As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/i
 
    * If the argument is a compound, the argument name will be the same as the functor name. For example, ```somegoal(arg0=0, point(1, 2))```. The name of the second argument is "point". 
 
-* The custom behavior of a predicate type might implement type-specific syntax sugar: if the head of a rule with the corresponding type does not have an argument mentioned, the argument will be added automatically with the value being a variable with the same name. For example, suppose "mygoal" is a type which has two arguments v1 and v2, the following rules are all equivalent: 
+* The custom behavior of a predicate type might implement type-specific syntactic sugar: if the head of a rule with the corresponding type does not have an argument mentioned, then the argument will be added automatically with the value being a variable with the same name. For example, suppose "mygoal" is a type which has two arguments v1 and v2, the following rules are all equivalent: 
 
 ```Prolog
 mygoal :- body 
@@ -107,11 +107,12 @@ Popular Prolog implementations typically have many more defined, which might be 
 
 The below predicates are either unique to Guan, or have some special semantics: 
 
+
 **enumerable**: takes a C# collection object as the first argument and returns the members as the second argument. 
 
 **forwardcut**: 
 
-For temporal reasoning, an event often needs to be matched with another event that is closest to it. For example, consider a sequence of events of Start, End, Start, End, Start, Start, End… Such sequence could be the start and end of a process as an example. Note that sometimes the End event is missing, as the process could have crashed. Now suppose that we want to define a frame type ProcessStartEnd. We cannot use a simple rule like this: 
+For temporal reasoning, an event often needs to be matched with another event that is closest to it. For example, consider a sequence of events of Start, End, Start, End, Start, Start, End, etc. Such sequence could be the start and end of a process as an example. Note that sometimes the End event is missing, as the process could have crashed. Now suppose that we want to define a frame type ProcessStartEnd. We cannot use a simple rule like this: 
 
 ```Prolog
 ProcessStartEnd(?StartTime, ?EndTime) :- Start(time=?StartTime),
@@ -165,25 +166,25 @@ Other than the logical variables that can be used in rules, many Prolog implemen
 
 **WriteLine**: output to console and trace  
   
+
 ### External Predicate 
 
 In addition to the predicates defined by rules and the built-in predicates, sometimes we need to implement new predicates, typically for interacting with external environment. In such case, a subclass of PredicateType needs to be created with the following member implemented: 
 
-```C# 
 public override PredicateResolver CreateResolver(CompoundTerm input, Constraint constraint, QueryContext context) 
-```
 
 The implementation should usually create a subclass of PredicateResolver and returns an instance of this subclass in this above method. 
 
 Below we will describe two simple types of external predicates, one for output and one for input. 
 
-To implement a predicate type for output (e.g. a repair action), typically we will want to derive its PredicateResolver from a simple base class: BooleanPredicateResolver. Such a predicate defines a abstract method that is to be implemented: 
+To implement a predicate type for output (e.g. a repair action), typically we will want to derive its PredicateResolver from a simple base class: BooleanPredicateResolver. Such a predicate defines an abstract method that is to be implemented: 
 
-``` C#
-protected abstract Task<bool> CheckAsync()  
+``` C# 
+protected abstract Task<bool> CheckAsync() 
 ```
 
 If this function returns true, the corresponding goal will succeed and otherwise fail. The function can perform arbitrary logic, based on the input arguments passed in. 
+
 ``` C#
  protected override Task<bool> CheckAsync()
  {
@@ -223,188 +224,7 @@ Each result should be represented as a Term (typically a CompoundTerm) and retur
 To retrieve the query criteria, the value of input arguments can be examined, same as what is described for the output predicates. 
 
 
-### Debugging 
-
-A convenient way to debug Guan logic rules is by examining the trace output. Guan can output traces when the rules are executed. For example, below are the traces for executing the query ```append(?X, ?Y, [1,2,3])```: 
-
-```
-2020-2-26 10:39:33.283 
-Trace 
-1 
-Call	[1,0]: append(?$0,?$1,[1,2,3]) 
-
-2020-2-26 10:39:33.284 
-Trace 
-1 
-Exit	[1,1]: append([],[1,2,3],[1,2,3]) 
-
-2020-2-26 10:39:33.285 
-Trace 
-1 
-Call	[1,1]: append(?$0,?$1,[1,2,3]) 
- 
-2020-2-26 10:39:33.286 
-Trace 
-1 
-Call	[2,0]: append(?Xs,?$1,[2,3]) 
- 
-2020-2-26 10:39:33.286 
-Trace 
-1 
-Exit	[2,1]: append([],[2,3],[2,3]) 
-
-2020-2-26 10:39:33.286 
-Trace 
-1 
-Exit	[1,2]: append([1],[2,3],[1,2,3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Call	[1,2]: append(?$0,?$1,[1,2,3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Call	[2,1]: append(?Xs,?$1,[2,3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Call	[3,0]: append(?Xs,?$1,[3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Exit	[3,1]: append([],[3],[3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Exit	[2,2]: append([2],[3],[2,3]) 
-
-2020-2-26 10:39:33.287 
-Trace 
-1 
-Exit	[1,3]: append([1,2],[3],[1,2,3]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Call	[1,3]: append(?$0,?$1,[1,2,3]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Call	[2,2]: append(?Xs,?$1,[2,3]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Call	[3,1]: append(?Xs,?$1,[3]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Call	[4,0]: append(?Xs,?$1,[]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Exit	[4,1]: append([],[],[]) 
-
-2020-2-26 10:39:33.288 
-Trace 
-1 
-Exit	[3,2]: append([3],[],[3]) 
-
-2020-2-26 10:39:33.289 
-Trace 
-1 
-Exit	[2,3]: append([2,3],[],[2,3]) 
-
-2020-2-26 10:39:33.289 
-Trace 
-1 
-Exit	[1,4]: append([1,2,3],[],[1,2,3]) 
-
-2020-2-26 10:39:33.289 
-Trace 
-1 
-Call	[1,4]: append(?$0,?$1,[1,2,3]) 
-
-2020-2-26 10:39:33.289 
-Trace 
-1 
-Call	[2,3]: append(?Xs,?$1,[2,3]) 
-
-
-2020-2-26 10:39:33.289 
-Trace 
-1 
-Call	[3,2]: append(?Xs,?$1,[3]) 
-
-2020-2-26 10:39:33.290 
-Trace 
-1 
-Call	[4,1]: append(?Xs,?$1,[]) 
-
-2020-2-26 10:39:33.290 
-Trace 
-1 
-Fail	[4,1]: append(?Xs,?$1,[]) 
-
-2020-2-26 10:39:33.290 
-Trace 
-1 
-Fail	[3,2]: append(?Xs,?$1,[3]) 
-
-2020-2-26 10:39:33.290 
-Trace 
-1 
-Fail	[2,3]: append(?Xs,?$1,[2,3]) 
-
-2020-2-26 10:39:33.290 
-Trace 
-1 
-Fail	[1,4]: append(?$0,?$1,[1,2,3]) 
-
- ```
-
-There are basically two types of traces - one for calling a goal and another for the result: 
-
-```Call```: this is when a goal is called. Sometimes you will see T-Call, this is similar to Call, but with tail-optimization. In this trace, you typically see variables in the arguments. 
-
-```Exit/Fail```: when the goal is successful, you will see the Exit trace, otherwise you will see Fail. Compared with the Call trace, typically you will see some variables getting instantiated. 
-
-Every trace has a pair of numbers like [4,0]. The first number indicates the depth of the call frame. The number will increase for the "Call" trace and decrease for "Exit" or "Fail" trace. You can also match the Call trace with the Exit/Fail trace by this number to see the invocation and result for the same call. The second number is the iteration count. When a goal is initially called, the number is 0, when it returned the number gets incremented by 1. 
-
-Such trace is not enabled by default. And there are two ways to enable them: 
-
-In the consuming application's config file, set EnableTrace to True. This will enable trace for the entire process. 
-
-```<add key="EnableTrace" value="True"/> ```
-
-Include a "trace" goal in a rule, this will only enable trace after the goal is executed. Conversely, you can disable trace with a "notrace" goal.  
-
-```Prolog
-trace,append(?X, ?Y, [1,2,3]) 
-```
-
-The best way to understand the "trace" and "notrace" goal is to think of them as a special setval predicate where the global variable name and value do not need to be specified explicitly. On backtracking, the previous flag for enable/disable trace will be restored. 
-
-When trace is enabled this way, tail optimization is disabled. 
-
-The trace will be output to both console and the .trace file. 
-
-Besides the standard trace, you can add your own by using the WriteLine predicate. For example: 
-
-```Prolog
-WriteLine('X={0},Y={1}", ?X, ?Y)
-``` 
-
-
-### Implementing Functions 
+### Implementing Guan Functions 
 
 As described previously, functions invoking arbitrary C# logic can be used in the rules either as constraints or to perform some operations. They can also be used in records.txt file to parse data into C# objects. In fact, the Guan infrastructure also uses functions for many other purposes which will not be described in this document. 
 
@@ -453,19 +273,3 @@ internal class ToLowerFunc : UnaryFunc
 } 
 
 ```
- 
-
-
-### Contributing
-
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
-
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.

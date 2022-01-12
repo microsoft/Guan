@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Build-Guan.ps1 = Build-Guan.ps1
 		Build-NugetPackage.ps1 = Build-NugetPackage.ps1
 		Guan.nuspec.template = Guan.nuspec.template
+		guannuget.md = guannuget.md
 		README.md = README.md
 		SECURITY.md = SECURITY.md
 		SUPPORT.md = SUPPORT.md
