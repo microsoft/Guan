@@ -8,6 +8,10 @@ Guan employs Prolog style syntax for writing logic rules. It enables easy intero
 
 Author: Lu Xun, Microsoft. 
 
+### Getting Started 
+
+Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, ```GuanExamples``` with very simple rules, simple External Predicate implementations, and highly documented sample code.
+
 ### Syntax
 
 As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/index.php). We will not describe things that are common with standard Prolog, but rather present the differences below (they are different mostly to allow more natural interop between rules and C# code): 

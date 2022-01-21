@@ -20,14 +20,13 @@ namespace Guan.Logic
     public class QueryContext : IPropertyContext, IWritablePropertyContext
     {
         private static long seqGenerator = 0;
-
-        private QueryContext parent;
+        private readonly QueryContext parent;
         private List<QueryContext> children;
-        private QueryContext root;
+        private readonly QueryContext root;
         private string orderProperty;
         private ResolveOrder order;
-        private Dictionary<string, object> variables;
-        private Module asserted;
+        private readonly Dictionary<string, object> variables;
+        private readonly Module asserted;
         private bool isLocalStable;
         private bool isStable;
         private bool isLocalSuspended;
@@ -35,8 +34,8 @@ namespace Guan.Logic
         private bool isCancelled;
         private bool enableTrace;
         private bool enableDebug;
-        private List<IWaitingTask> waiting;
-        private long seq;
+        private readonly List<IWaitingTask> waiting;
+        private readonly long seq;
 
         public QueryContext()
         {
@@ -76,7 +75,6 @@ namespace Guan.Logic
         }
 
         public event EventHandler Suspended;
-
         public event EventHandler Resumed;
 
         public string OrderProperty
@@ -207,8 +205,7 @@ namespace Guan.Logic
                     return this.order;
                 }
 
-                object result;
-                _ = this.variables.TryGetValue(name, out result);
+                _ = this.variables.TryGetValue(name, out object result);
                 return result;
             }
 
@@ -216,9 +213,9 @@ namespace Guan.Logic
             {
                 if (name == "Order")
                 {
-                    if (value is ResolveOrder)
+                    if (value is ResolveOrder order1)
                     {
-                        this.order = (ResolveOrder)value;
+                        this.order = order1;
                     }
                     else
                     {

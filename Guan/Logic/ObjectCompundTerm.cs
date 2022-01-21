@@ -7,7 +7,7 @@ namespace Guan.Logic
     using System;
     using System.Globalization;
     using System.Reflection;
-    using Newtonsoft.Json;
+    using System.Text.Json;
 
     /// <summary>
     /// Adapater to expose object properties as a compund term using reflection.
@@ -90,7 +90,7 @@ namespace Guan.Logic
                 return "null";
             }
 
-            return JsonConvert.SerializeObject(this.value, Formatting.Indented);
+            return JsonSerializer.Serialize(this.value, new JsonSerializerOptions { WriteIndented = true });
         }
     }
 }

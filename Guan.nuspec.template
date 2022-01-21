@@ -2,12 +2,11 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="3.3.0">
     <id>%PACKAGE_ID%</id>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 	  <releaseNotes>
-- V1 Release!
-- Updated documentation.
-- Added Readme to nupkg.
-- Code enhancements.
+- Fixed package dependency bug. When you install Guan into a .NET project, it will also install the required System.Text.Json nupkg.
+- Updated nuspec file and nupkg generation Powershell script.
+- Added Getting Started document and related GuanExamples standalone project for use in experimenting with Guan inside a containing .NET Core 3.1 application.
 	  </releaseNotes>
     <authors>Microsoft</authors>
     <license type="expression">MIT</license>
@@ -21,10 +20,10 @@
       <files include="**" buildAction="None" copyToOutput="true" />
     </contentFiles>
     <dependencies>
-      <group targetFramework=".NETStandard2.0" />
+	  <dependency id="System.Text.Json" version="6.0.0" />
     </dependencies>
     <projectUrl>https://github.com/microsoft/guan</projectUrl>
-    <tags>guan logic-programming netstandard21 netcore csharp</tags>
+    <tags>guan logic-programming netstandard20 netcore csharp</tags>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
   </metadata>
   <files>
