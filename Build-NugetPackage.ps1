@@ -26,7 +26,7 @@ function Build-Nuget {
 
     [System.IO.File]::WriteAllText($nugetSpecPath, $nugetSpecTemplate.Replace("%PACKAGE_ID%", $packageId).Replace("%ROOT_PATH%", $scriptPath))
 
-    .\nuget.exe pack $nugetSpecPath -basepath $basePath -OutputDirectory bin\release\Guan\Nugets -properties NoWarn=NU5100
+    .\nuget.exe pack $nugetSpecPath -basepath $basePath -OutputDirectory bin\release\Guan\Nugets -properties NoWarn=NU5100,NU5128
 }
 
 [string] $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition

@@ -184,6 +184,11 @@ namespace GuanTest
             }
         }
 
+        /// <summary>
+        /// Parses a command from a .test file.
+        /// </summary>
+        /// <param name="command">Command to parse.</param>
+        /// <returns>A list of strings that contain command identifiers.</returns>
         protected static List<string> ParseCommand(string command)
         {
             List<string> result = new List<string>();

@@ -256,6 +256,11 @@ namespace GuanTest
             return true;
         }
 
+        /// <summary>
+        /// Runs the supplied command from a .test file.
+        /// </summary>
+        /// <param name="command">Command to run.</param>
+        /// <returns></returns>
         public override bool ExecuteCommand(string command)
         {
             List<string> args = ParseCommand(command);
