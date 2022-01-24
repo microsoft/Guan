@@ -10,7 +10,7 @@ Author: Lu Xun, Microsoft.
 
 ### Getting Started 
 
-Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code.
+Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code. It is assumed that you are already familiar with logic programming.
 
 ### Syntax
 
