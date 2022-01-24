@@ -34,19 +34,20 @@ Let's create a simple program (.NET Core 3.1 Console app) with very simple rules
 ```C#
 using Guan.Logic;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace GuanExamples
 {
     class Program
     {
-        static void Main()
+        static async Task Main()
         {
             // External predicate types (as object instances or singletons (static single instances)) must be specified in a Guan FunctorTable object
             // which is used to create the Module, which is a collection of predicate types and is required by the Query executor (see RunQueryAsync impl in GuanQueryDispatcher.cs).
             var functorTable = new FunctorTable();
-            functorTable.Add(TestAdditionPredicateType.Singleton("addresult"));
-            functorTable.Add(TestDivisionPredicateType.Singleton("divresult"));
-            functorTable.Add(TestSubtractionPredicateType.Singleton("subresult"));
+            functorTable.Add(TestAddPredicateType.Singleton("addresult"));
+            functorTable.Add(TestDivPredicateType.Singleton("divresult"));
+            functorTable.Add(TestSubPredicateType.Singleton("subresult"));
 
             // Create a List<string> containing logic rules (these could also be housed in a text file). These rules are very simple by design, as are the external predicates used in this sample console app.
             // The rules below are simple examples of using logic in their sub rule parts and calling an external predicate.
@@ -77,24 +78,24 @@ namespace GuanExamples
             // A Module is a collection of predicate types.
             Module module = Module.Parse("test", logicsRules, functorTable);
             var queryDispatcher = new GuanQueryDispatcher(module);
-            
+
             /* Execute queries via GuanQueryDispatcher helper class */
 
             // test goal with external predicate impls.
-            queryDispatcher.RunQueryAsync("test(3, 3)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(0, 0)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(5, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(3, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(4, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(2, 5)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(6, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(8, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(25, 5)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(1, 0)").GetAwaiter().GetResult();
+            await queryDispatcher.RunQueryAsync("test(3, 3)");
+            await queryDispatcher.RunQueryAsync("test(0, 0)");
+            await queryDispatcher.RunQueryAsync("test(5, 2)");
+            await queryDispatcher.RunQueryAsync("test(3, 2)");
+            await queryDispatcher.RunQueryAsync("test(4, 2)");
+            await queryDispatcher.RunQueryAsync("test(2, 5)");
+            await queryDispatcher.RunQueryAsync("test(6, 2)");
+            await queryDispatcher.RunQueryAsync("test(8, 2)");
+            await queryDispatcher.RunQueryAsync("test(25, 5)");
+            await queryDispatcher.RunQueryAsync("test(1, 0)");
 
             // testx goals with internal predicate impls.
             // the answer/result for the below query would be (x=1,y=2) given the rules.
-            queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)", true).GetAwaiter().GetResult();
+            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)", true);
         }
     }
 }
