@@ -19,7 +19,7 @@ Within a code file (.cs) you must reference ```Guan.Logic``` in a using statemen
 ```C#
 using Guan.Logic;
 ```
-Guan supports the usage of Prolog-like logic rules (textual query expression) that employ the standard format: 
+Guan supports the usage of Prolog-like logic rules that employ the standard format: 
 
 A rule ```head``` which identifies a ```goal``` and series of ```sub-rules (or sub-goals)``` that form the logical workflow.
 
