@@ -29,18 +29,18 @@ namespace GuanExamples
 
             // Execute the query. 
             // result will be () if there is no answer/result for supplied query (see the simple external predicate rules, for example).
-
             if (maxResults == 1)
             {
+                // Gets one result.
                 Term result = await query.GetNextAsync();
                 Console.WriteLine($"answer: {result}");
             }
             else
             {
-                // If there are multiple results expected (max of 5, in this case).
+                // Gets multiple results, if possible, up to supplied maxResults value.
                 List<Term> results = await query.GetResultsAsync(maxResults);
                 Console.WriteLine($"answer: {string.Join(',', results)}");
-            } 
+            }
         }
     }
 }
