@@ -41,8 +41,21 @@ namespace GuanExamples
                 "f1(?a, ?b, ?b, ?a)"
             };
 
+            var logicsRules2 = new List<string>
+            {
+                "person(adam)",
+                "person(betty)",
+                "person(carl)",
+                "person(dan)",
+             };
+
+            Module module2 = Module.Parse("person", logicsRules2, null);
+            var queryDispatcher2 = new GuanQueryDispatcher(module2);
+            await queryDispatcher2.RunQueryAsync("person(?p)", 4);
+
             // A Module is a collection of predicate types.
             Module module = Module.Parse("test", logicsRules, functorTable);
+
             var queryDispatcher = new GuanQueryDispatcher(module);
 
             /* Execute queries via GuanQueryDispatcher helper class */
@@ -61,7 +74,7 @@ namespace GuanExamples
 
             // testx goals with internal predicate impls.
             // the answer/result for the below query would be (x=1,y=2) given the rules.
-            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)", true);
+            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Guan.Logic;
 
@@ -14,7 +15,7 @@ namespace GuanExamples
             module_ = module;
         }
 
-        public async Task RunQueryAsync(string queryExpression, bool showResult = false)
+        public async Task RunQueryAsync(string queryExpression, int maxResults = 1)
         {
             // Required QueryContext instance.
             QueryContext queryContext = new QueryContext();
@@ -28,12 +29,18 @@ namespace GuanExamples
 
             // Execute the query. 
             // result will be () if there is no answer/result for supplied query (see the simple external predicate rules, for example).
-            Term result = await query.GetNextAsync();
 
-            if (showResult)
+            if (maxResults == 1)
             {
+                Term result = await query.GetNextAsync();
                 Console.WriteLine($"answer: {result}");
             }
+            else
+            {
+                // If there are multiple results expected (max of 5, in this case).
+                List<Term> results = await query.GetResultsAsync(maxResults);
+                Console.WriteLine($"answer: {string.Join(',', results)}");
+            } 
         }
     }
 }
