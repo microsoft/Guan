@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Guan.Logic;
 
@@ -33,13 +32,13 @@ namespace GuanExamples
             {
                 // Gets one result.
                 Term result = await query.GetNextAsync();
-                Console.WriteLine($"answer: {result}");
+                Console.WriteLine($"answer: {result}"); // () if there is no answer.
             }
             else
             {
                 // Gets multiple results, if possible, up to supplied maxResults value.
                 List<Term> results = await query.GetResultsAsync(maxResults);
-                Console.WriteLine($"answer: {string.Join(',', results)}");
+                Console.WriteLine($"answer: {string.Join(',', results)}"); // convert the List<Term> object into a comma-delimited string.
             }
         }
     }
