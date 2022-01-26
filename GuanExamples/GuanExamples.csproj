@@ -4,6 +4,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Logic.Guan" Version="1.0.3" />
+    <ProjectReference Include="..\Guan\Guan.csproj" />
   </ItemGroup>
 </Project>
