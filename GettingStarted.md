@@ -32,7 +32,8 @@ In Guan, ```goal``` is implemented as a ```CompoundTerm``` object. It can have a
 Let's create a simple program (.NET Core 3.1 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project.
 
 ```C#
-using Guan.Logic;
+﻿using Guan.Logic;
+using GuanExamples.ExternalPredicates;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -48,6 +49,9 @@ namespace GuanExamples
             functorTable.Add(TestAddPredicateType.Singleton("addresult"));
             functorTable.Add(TestDivPredicateType.Singleton("divresult"));
             functorTable.Add(TestSubPredicateType.Singleton("subresult"));
+
+            // predicate name is hard-coded in the predicate's impl ("utcnow"). See GetDateTimeUtcNowPredicateType.cs.
+            functorTable.Add(GetDateTimeUtcNowPredicateType.Singleton());
 
             // Create a List<string> containing logic rules (these could also be housed in a text file). These rules are very simple by design, as are the external predicates used in this sample console app.
             // The rules below are simple examples of using logic in their sub rule parts and calling an external predicate.
@@ -72,16 +76,66 @@ namespace GuanExamples
                 "showtype(?x, 'nonvar') :- nonvar(?x)",
                 "showtype(?x, 'atom') :- atom(?x)",
                 "showtype(?x, 'compound') :- compound(?x)",
-                "f1(?a, ?b, ?b, ?a)"
+                "f1(?a, ?b, ?b, ?a)",
             };
 
-            // A Module is a collection of predicate types.
-            Module module = Module.Parse("test", logicsRules, functorTable);
+            // List of rules - simple facts and a logic rule to determine if a specified person (?x) is a person.
+            var logicRules2 = new List<string>
+            {
+                "person(adam)",
+                "person(betty)",
+                "person(carl)",
+                "person(dan)",
+                "test(?x) :- not(person(?x)), WriteInfo('{0} is not a person', ?x)",
+                "test(?x) :- WriteInfo('{0} is a person', ?x)"
+             };
+
+            // The purpose of naming a Module is just to be able to identify the module instance if you need to for some reason.
+            // Other than that, there is nothing useful about Module name (it is not related to rule naming, for example).
+            // Think of name as simply the module id. Nothing more.
+            Module module2 = Module.Parse("persontests", logicRules2, null);
+            var queryDispatcher2 = new GuanQueryDispatcher(module2);
+
+            // This will return all facts in a comma-delimited string.
+            await queryDispatcher2.RunQueryAsync("person(?p)", logicRules2.Count);
+            
+            // test if specified person is a known fact.
+            await queryDispatcher2.RunQueryAsync("test(charles)"); // charles is not a person.
+            await queryDispatcher2.RunQueryAsync("test(betty)"); // betty is a person.
+            var logicRules3 = new List<string>
+            {
+                // time() is a system predicate. Used without an arg, it results in DateTime.UtcNow. With a TimeSpan arg, it results in DateTime.UtcNow + arg.
+                // Guan will automatically convert a TimeSpan representation (like 1.00:00:00) to a .NET TimeSpan object.
+                "testdate(?dt) :- time(-1.00:00:00) > ?dt, WriteInfo('time() impl: {0} is more than 1 day ago', ?dt)",
+                // Or, for no good reason other than demonstrating how to write an external predicate that binds a value to rule variable(see GetDateTimeUtcNowPredicateType.cs),
+                // use the external predicate utcnow to do the same thing.. utcnow binds a DateTime object to ?n (it is just DateTime.UtcNow).
+                // Note that you could use any value for the variable name used in utcnow. You could call it ?now, ?x, whatever..
+                "testdate1(?dt) :- utcnow(?n), ?n - ?dt > 1.00:00:00, WriteInfo('utcnow impl: {0} is more than 1 day ago', ?dt)",
+                // This will throw a GuanException because the argument for utcnow is grounded, not a variable.
+                "testdate2(?dt) :- utcnow(42)",
+                // Effectively, else rules.
+                "testdate(?dt) :- WriteInfo('time impl: {0} is less than 1 day ago', ?dt)",
+                "testdate1(?dt) :- WriteInfo('utcnow impl: {0} is less than 1 day ago', ?dt)",
+            };
+
+            Module module3 = Module.Parse("testdates", logicRules3, functorTable);
+            var queryDispatcher3 = new GuanQueryDispatcher(module3);
+
+            // Specify query arg as a DateTime object (internally supported by Guan).
+            await queryDispatcher3.RunQueryAsync("testdate(DateTime('2022-01-21'))");
+            await queryDispatcher3.RunQueryAsync("testdate(DateTime('2022-02-22'))");
+
+            // Employs an external predicate in the rule..
+            await queryDispatcher3.RunQueryAsync("testdate1(DateTime('2022-01-21'))");
+            await queryDispatcher3.RunQueryAsync("testdate1(DateTime('2022-02-22'))");
+
+            // Crash. Uncomment and run app to see why (or, you could look at the code in GetDateTimeUtcNowPredicateType.GetNextTermAsync function).
+            // await queryDispatcher3.RunQueryAsync("testdate2(DateTime('2022-01-25'))");
+
+            Module module = Module.Parse("testx", logicsRules, functorTable);
             var queryDispatcher = new GuanQueryDispatcher(module);
 
-            /* Execute queries via GuanQueryDispatcher helper class */
-
-            // test goal with external predicate impls.
+            // test goal with arithmetic external predicates.
             await queryDispatcher.RunQueryAsync("test(3, 3)");
             await queryDispatcher.RunQueryAsync("test(0, 0)");
             await queryDispatcher.RunQueryAsync("test(5, 2)");
@@ -93,9 +147,9 @@ namespace GuanExamples
             await queryDispatcher.RunQueryAsync("test(25, 5)");
             await queryDispatcher.RunQueryAsync("test(1, 0)");
 
-            // testx goals with internal predicate impls.
-            // the answer/result for the below query would be (x=1,y=2) given the rules.
-            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)", true);
+            // testx goals with internal predicates.
+            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)"); // (x=1,y=2)
+            await queryDispatcher.RunQueryAsync("test5(?x, ?y), test1(?y)"); // (x=2, y=2)
         }
     }
 }
@@ -110,6 +164,7 @@ There are three main pieces to executing a Guan query:
 Let's look at the simple helper class in the ```GuanExamples``` project, ```GuanQueryDispatcher```, to make this more clear.  
 
 ```C#
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Guan.Logic;
@@ -118,7 +173,6 @@ namespace GuanExamples
 {
     public class GuanQueryDispatcher
     {
-        // This is set by the consumer of this type via this class's constructor.        
         private readonly Module module_;
 
         public GuanQueryDispatcher(Module module)
@@ -126,7 +180,7 @@ namespace GuanExamples
             module_ = module;
         }
 
-        public async Task RunQueryAsync(string queryExpression, bool showResult = false)
+        public async Task RunQueryAsync(string queryExpression, int maxResults = 1)
         {
             // Required QueryContext instance.
             QueryContext queryContext = new QueryContext();
@@ -139,13 +193,18 @@ namespace GuanExamples
             Query query = Query.Create(queryExpression, queryContext, moduleProvider);
 
             // Execute the query. 
-            // result will be () if there is no answer/result for supplied query 
-            // (see the simple external predicate rules, for example).
-            Term result = await query.GetNextAsync();
-
-            if (showResult)
+            // result will be () if there is no answer/result for supplied query (see the simple external predicate rules, for example).
+            if (maxResults == 1)
             {
-                Console.WriteLine($"answer: {result}");
+                // Gets one result.
+                Term result = await query.GetNextAsync();
+                Console.WriteLine($"answer: {result}"); // () if there is no answer.
+            }
+            else
+            {
+                // Gets multiple results, if possible, up to supplied maxResults value.
+                List<Term> results = await query.GetResultsAsync(maxResults);
+                Console.WriteLine($"answer: {string.Join(',', results)}"); // convert the List<Term> object into a comma-delimited string.
             }
         }
     }
