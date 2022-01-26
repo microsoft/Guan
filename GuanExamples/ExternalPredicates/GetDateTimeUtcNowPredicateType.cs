@@ -50,7 +50,8 @@ namespace GuanExamples.ExternalPredicates
         {
             return Instance ??= new GetDateTimeUtcNowPredicateType("utcnow");
         }
-
+        
+        // This predicate only supports one argument, which is the variable (an IndexedVariable) that will hold the result.
         private GetDateTimeUtcNowPredicateType(string name)
                  : base(name, true, 1, 1)
         {
