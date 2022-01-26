@@ -57,7 +57,7 @@ namespace GuanExamples
              };
 
             // The purpose of naming a Module is just to be able to identify the module instance if you need to for some reason.
-            // Other than that, there is nothing useful about Module name (it is not related to rule naming, for example).
+            // Other than that, there is nothing useful about Module name (it is not related to goal naming, for example).
             // Think of name as simply the module id. Nothing more.
             Module module2 = Module.Parse("persontests", logicRules2, null);
             var queryDispatcher2 = new GuanQueryDispatcher(module2);
