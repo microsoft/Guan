@@ -24,7 +24,7 @@ namespace Guan.Logic
             this.entries = new List<OutputVariable>(capacity);
         }
 
-        public List<CompoundTerm> Constraints
+        internal List<CompoundTerm> Constraints
         {
             get
             {
@@ -45,6 +45,22 @@ namespace Guan.Logic
             get
             {
                 return this.entries;
+            }
+        }
+
+        public Term this[string name]
+        {
+            get
+            {
+                foreach (OutputVariable output in this.entries)
+                {
+                    if (output.Original.Name == name)
+                    {
+                        return output.GetEffectiveTerm();
+                    }
+                }
+
+                return null;
             }
         }
 

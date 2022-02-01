@@ -25,7 +25,7 @@ namespace Guan.Logic
             this.resolver = queryType.CreateResolver(this.input, Constraint.Empty, queryContext);
         }
 
-        public static Query Create(string text, QueryContext queryContext, IFunctorProvider provider)
+        public static Query Create(string text, QueryContext queryContext)
         {
             if (text.Contains(":-"))
             {
@@ -38,7 +38,7 @@ namespace Guan.Logic
             types.Add(QueryTypeName);
             List<string> rules = new List<string>();
             rules.Add(QueryTypeName + " :- " + text);
-            Module module = Module.Parse("query", rules, new Provider(provider, queryType), types);
+            Module module = Module.Parse("query", rules, new Provider(queryContext.Provider, queryType), types);
             return new Query(queryType, queryContext);
         }
 
@@ -146,7 +146,10 @@ namespace Guan.Logic
 
                 foreach (string name in rule.VariableTable)
                 {
-                    rule.AddArgument(term, "?" + name, name);
+                    if (name != "_")
+                    {
+                        rule.AddArgument(term, "?" + name, name);
+                    }
                 }
 
                 VariableBinding binding = rule.CreateBinding(0);

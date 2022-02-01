@@ -1,5 +1,4 @@
-﻿
-namespace GuanTest
+﻿namespace GuanTest
 {
     internal class GuanTestSession : TestSession
     {

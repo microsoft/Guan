@@ -74,7 +74,7 @@ namespace Guan.Logic
                 ReleaseAssert.IsTrue(current == null, "Last line not completed for {0}", path);
             }
 
-            return Parse(path, ruleExpressions, provider, publicTypes);
+            return Parse(Path.GetFileNameWithoutExtension(path), ruleExpressions, provider, publicTypes);
         }
 
         public static Module Parse(string name, List<string> ruleExpressions, IFunctorProvider provider, List<string> publicTypes = null)
@@ -95,33 +95,6 @@ namespace Guan.Logic
             }
 
             return Parse(name, rules, provider, publicTypes);
-        }
-
-        /// <summary>
-        /// Add a dynamic predicate (assert).
-        /// </summary>
-        /// <param name="term">The predicate.</param>
-        /// <param name="append">Whether to add the predicate in append mode.</param>
-        public void Add(CompoundTerm term, bool append)
-        {
-            if (!this.dynamic)
-            {
-                throw new GuanException("Not a dynamic module");
-            }
-
-            lock (this.types)
-            {
-                PredicateType type;
-                if (!this.types.TryGetValue(term.Functor.Name, out type))
-                {
-                    type = new PredicateType(term.Functor.Name, true);
-                    this.types.Add(term.Functor.Name, type);
-                }
-
-                CompoundTerm head = new CompoundTerm(type, VariableBinding.Ground, term.Arguments);
-                Rule rule = new Rule(term.ToString(), head, new List<CompoundTerm>(), VariableTable.Empty);
-                type.AddRule(this, rule, append);
-            }
         }
 
         public void Add(PredicateType predicateType)
@@ -242,6 +215,57 @@ namespace Guan.Logic
             return result;
         }
 
+        internal static PredicateType GetGoalPredicateType(string typeName, IFunctorProvider provider, Module from)
+        {
+            Functor functor = GetFunctor(typeName, provider, from);
+            EvaluatedFunctor evaluatedFunctor = functor as EvaluatedFunctor;
+            if (evaluatedFunctor != null)
+            {
+                return evaluatedFunctor.ConstraintType;
+            }
+            else
+            {
+                return functor as PredicateType;
+            }
+        }
+
+        internal void Add(Term term, bool append)
+        {
+            if (!this.dynamic)
+            {
+                throw new GuanException("Not a dynamic module");
+            }
+
+            VariableTable variableTable = new VariableTable();
+            CompoundTerm head = term.ToCompound();
+            if (head == null)
+            {
+                throw new GuanException($"Invalid assert argument: {term}");
+            }
+
+            if (head.Functor.Name == ":-")
+            {
+                throw new GuanException($"Rule not supported as assert argument: {term}");
+            }
+
+            Dictionary<Variable, int> variables = new Dictionary<Variable, int>();
+            head = CreateRuleTerm(head, variables, variableTable);
+
+            lock (this.types)
+            {
+                PredicateType type;
+                if (!this.types.TryGetValue(head.Functor.Name, out type))
+                {
+                    type = new PredicateType(head.Functor.Name, true);
+                    this.types.Add(head.Functor.Name, type);
+                }
+
+                head.Functor = type;
+                Rule rule = new Rule(term.ToString(), head, new List<CompoundTerm>(), variableTable);
+                type.AddRule(this, rule, append);
+            }
+        }
+
         private static void ProcessDesc(Rule rule, Dictionary<string, PredicateType> types)
         {
             if (rule.Goals.Count > 0 || rule.Head.Arguments.Count < 2 || !rule.Head.IsGround() || !(rule.Head.Arguments[0].Value is Constant))
@@ -329,20 +353,6 @@ namespace Guan.Logic
             return null;
         }
 
-        private static PredicateType GetGoalPredicateType(string typeName, IFunctorProvider provider, Module from)
-        {
-            Functor functor = GetFunctor(typeName, provider, from);
-            EvaluatedFunctor evaluatedFunctor = functor as EvaluatedFunctor;
-            if (evaluatedFunctor != null)
-            {
-                return evaluatedFunctor.ConstraintType;
-            }
-            else
-            {
-                return functor as PredicateType;
-            }
-        }
-
         private static void UpdateFunctor(CompoundTerm term, Dictionary<string, PredicateType> types, IFunctorProvider provider, Module from)
         {
             foreach (TermArgument arg in term.Arguments)
@@ -372,12 +382,55 @@ namespace Guan.Logic
             }
         }
 
+        private static CompoundTerm CreateRuleTerm(CompoundTerm term, Dictionary<Variable, int> variables, VariableTable variableTable)
+        {
+            CompoundTerm result = new CompoundTerm(term.Functor);
+            for (int i = 0; i < term.Arguments.Count; i++)
+            {
+                Term arg = term.Arguments[i].Value.GetEffectiveTerm();
+                CompoundTerm compound = arg as CompoundTerm;
+                if (compound != null)
+                {
+                    arg = CreateRuleTerm(compound, variables, variableTable);
+                }
+                else
+                {
+                    Variable variable = arg as Variable;
+                    if (variable != null)
+                    {
+                        int index;
+                        if (!variables.TryGetValue(variable, out index))
+                        {
+                            index = variableTable.GetIndex(variables.Count.ToString(), true);
+                            variables.Add(variable, index);
+                        }
+
+                        arg = new IndexedVariable(index, variable.Name);
+                    }
+                }
+
+                result.AddArgument(arg, term.Arguments[i].Name);
+            }
+
+            return result;
+        }
+
         private static Module CreateSystemModule()
         {
             List<string> rules = new List<string>() 
             {
                 "repeat",
                 "repeat :- repeat",
+                "?X ; _ :- ?X",
+                "_ ; ?Y :- ?Y",
+                "not(?X) :- ?X, !, fail",
+                "not(_)",
+                "retractall(?X) :- retract(?X), fail",
+                "retractall(_)",
+                "findall(?X, ?G, _) :- asserta($findallinstance('$mark')), ?G, asserta($findallinstance(?X)), fail",
+                "findall(?X, _, ?Xs) :- retract($findallinstance(?X)), _collect(?X, ?Xs, []), !",
+                "_collect(?X, ?Xs, ?Ys) :- not(?X = '$mark'), retract($findallinstance(?X1)), !, _collect(?X1, ?Xs, [?X | ?Ys])",
+                "_collect('$mark', ?Xs, ?Xs)",
                 "append([], ?Ys, ?Ys)",
                 "append([?X|?Xs], ?Ys, [?X|?Zs]) :- append(?Xs, ?Ys, ?Zs)",
                 "member(?X, [?X|_]",

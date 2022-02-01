@@ -36,7 +36,7 @@ namespace Guan.Logic
             {
                 CompoundTerm goal = (CompoundTerm)this.GetInputArgument(0);
 
-                QueryContext context = new QueryContext();
+                QueryContext context = new QueryContext(null);
                 VariableTable table = new VariableTable();
                 table.GetIndex("_result", true);
                 VariableBinding binding = new VariableBinding(table, 0, this.Input.Binding.Level + 1);

@@ -603,7 +603,7 @@ namespace GuanTest
             //
             if (m_commands.Count > 0)
             {
-                EventLogWriter.WriteInfo("{0}", m_commands.Peek());
+                ConsoleSink.WriteLine(ConsoleColor.Green, "{0}", m_commands.Peek());
                 if (m_stepMode)
                 {
                     Console.WriteLine("Press enter to execute...");

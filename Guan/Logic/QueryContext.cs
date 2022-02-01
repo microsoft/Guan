@@ -20,13 +20,14 @@ namespace Guan.Logic
     public class QueryContext : IPropertyContext, IWritablePropertyContext
     {
         private static long seqGenerator = 0;
+        private readonly IFunctorProvider provider;
         private readonly QueryContext parent;
         private List<QueryContext> children;
         private readonly QueryContext root;
         private string orderProperty;
         private ResolveOrder order;
         private readonly Dictionary<string, object> variables;
-        private readonly Module asserted;
+        private readonly Module dynamicModule;
         private bool isLocalStable;
         private bool isStable;
         private bool isLocalSuspended;
@@ -37,13 +38,14 @@ namespace Guan.Logic
         private readonly List<IWaitingTask> waiting;
         private readonly long seq;
 
-        public QueryContext()
+        public QueryContext(IFunctorProvider provider)
         {
             this.seq = Interlocked.Increment(ref seqGenerator);
+            this.provider = provider;
             this.root = this;
             this.order = ResolveOrder.None;
             this.variables = new Dictionary<string, object>();
-            this.asserted = new Module("asserted");
+            this.dynamicModule = new Module("asserted");
             this.isStable = this.isLocalStable = false;
             this.isSuspended = this.isLocalSuspended = false;
             this.isCancelled = false;
@@ -56,9 +58,10 @@ namespace Guan.Logic
         {
             this.seq = Interlocked.Increment(ref seqGenerator);
             this.parent = parent;
+            this.provider = parent.provider;
             this.root = parent.root;
             this.orderProperty = parent.orderProperty;
-            this.asserted = parent.asserted;
+            this.dynamicModule = parent.dynamicModule;
             this.order = parent.order;
             this.variables = parent.variables;
             this.isStable = this.isLocalStable = false;
@@ -76,6 +79,14 @@ namespace Guan.Logic
 
         public event EventHandler Suspended;
         public event EventHandler Resumed;
+
+        public IFunctorProvider Provider
+        {
+            get
+            {
+                return this.provider;
+            }
+        }
 
         public string OrderProperty
         {
@@ -196,6 +207,14 @@ namespace Guan.Logic
             }
         }
 
+        internal Module DynamicModule
+        {
+            get
+            {
+                return this.dynamicModule;
+            }
+        }
+
         public virtual object this[string name]
         {
             get
@@ -256,16 +275,6 @@ namespace Guan.Logic
 
                 this.isStable = this.isLocalStable;
             }
-        }
-
-        internal void Assert(CompoundTerm term, bool append)
-        {
-            this.asserted.Add(term, append);
-        }
-
-        internal PredicateType GetAssertedPredicateType(string name)
-        {
-            return this.asserted.GetPredicateType(name);
         }
 
         internal void AddWaiting(IWaitingTask suspended)

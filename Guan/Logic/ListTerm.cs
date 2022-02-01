@@ -5,6 +5,7 @@
 namespace Guan.Logic
 {
     using System.Collections;
+    using System.Collections.Generic;
     using System.Text;
 
     /// <summary>
@@ -35,6 +36,20 @@ namespace Guan.Logic
             current.AddArgument(tail, "1");
             tail.AddArgument(child, "0");
             return tail;
+        }
+
+        public static List<Term> ToList(Term term)
+        {
+            List<Term> result = new List<Term>();
+            while (term != Constant.Nil)
+            {
+                CompoundTerm compound = (CompoundTerm)term;
+                ReleaseAssert.IsTrue(compound.Functor == listFunctor && compound.Arguments.Count == 2);
+                result.Add(compound.Arguments[0].Value);
+                term = compound.Arguments[1].Value.GetEffectiveTerm();
+            }
+
+            return result;
         }
 
         public static string ToString(CompoundTerm term)

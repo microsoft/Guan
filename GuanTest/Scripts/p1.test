@@ -25,7 +25,7 @@ expect "(x=?z,y=5,z=?z)"
 query "f1(?x, ?y, 5, ?z)"
 verify
 expect "(x=1)"
-query "test6(?x)"
+query "trace,test6(?x)"
 verify
 expect "(x=2)"
 query "test7(?x)"
@@ -76,14 +76,12 @@ expect "(X=7)"
 expect "(X=8)"
 query "test(?X)"
 verify
-rules clear
-rules "test(?N, ?R, ?t1) :- test1(?N, 0, ?R, this=?t1)"
-rules "test1(0, ?R, ?R) :- !"
-rules "test1(?N,?A, ?R) :- test1(?N - 1, ?A + ?N, ?R)"
-expect "(R=50005000,t1=test1(10000,0,50005000))"
-query "test(10000, ?R, ?t1)"
+rules "test2(?N, ?R, ?t1) :- _test2(?N, 0, ?R, this=?t1)"
+rules "_test2(0, ?R, ?R) :- !"
+rules "_test2(?N,?A, ?R) :- _test2(?N - 1, ?A + ?N, ?R)"
+expect "(R=50005000,t1=_test2(10000,0,50005000))"
+query "test2(10000, ?R, ?t1)"
 verify
-rules clear
 rules "flatten(?Xs, ?Ys) :- _flatten(?Xs, ?Ys, [])"
 rules "_flatten([?X|?Xs], ?Ys, ?Zs) :- !, _flatten(?X, ?Ys, ?Ys1), _flatten(?Xs, ?Ys1, ?Zs)"
 rules "_flatten([], ?Xs, ?Xs) :- !"
@@ -102,6 +100,21 @@ verify
 expect "(X=3)"
 query "length([1,2,3], ?X)"
 verify
+expect "(X=3)"
+expect "(X=4)"
+query "member(?X,[1,2,3,4,5]), (member(?X,[2,3]); member(?X,[4])), member(?X,[3,4,5])"
+verify
+rules "desc(d1, dynamic)"
+rules "testassert(?X, ?Y, ?Z) :- member(?Y1, [1,2]), asserta(d1(?Y1, ?Y2, ?Y2)), retract(d1(?X, ?Y, ?Z)), member(?X,[1,2,3]), member(?Y, [3,4]), member(?Z, [4,5])"
+rules "testretract :- member(?X, [1,2]), member(?Y, [1,2]), assert(d1(?X, ?Y)), fail"
+rules "testretract :- retract(d1(?X, ?X)), fail"
+rules "testretract(?X, ?Y) :- d1(?X, ?Y)"
+expect "(X=1,Y=4,Z=4)"
+expect "(X=2,Y=4,Z=4)"
+query "testassert(?X, ?Y, ?Z)"
+expect "(X=1,Y=2)"
+expect "(X=2,Y=1)"
+query "testretract(?X, ?Y)"
 expect "(X=[1,2,3,4])"
 query "flatten([1,[2,[3]],[4]], ?X)"
 verify
@@ -118,4 +131,7 @@ rules "place2(?Q, [_|?Qs], [_|?Ups], [_|?Downs]) :- place2(?Q, ?Qs, ?Ups, ?Downs
 expect "(Qs=[3,1,4,2])"
 expect "(Qs=[2,4,1,3])"
 query "queens(4, ?Qs)"
+rules "testfindall(?Xs, ?Ys) :- findall(?X, test1(?X), ?Xs), findall(?Y, member(?Y,[1,3,5]), ?Ys)"
+expect "(Xs=[5,6,7],Ys=[1,3,5])"
+query "testfindall(?Xs, ?Ys)"
 !q

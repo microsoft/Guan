@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 namespace Guan.Logic
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -37,14 +38,7 @@ namespace Guan.Logic
 
             protected override Task<bool> CheckAsync()
             {
-                Term term = this.GetInputArgument(0);
-                CompoundTerm compound = term as CompoundTerm;
-                if (compound == null || !compound.IsGround())
-                {
-                    throw new GuanException("Argument of assert must be a ground compound term: {0}", term);
-                }
-
-                this.Context.Assert((CompoundTerm)compound.GetGroundedCopy(), this.append);
+                this.Context.DynamicModule.Add(this.GetInputArgument(0).GetEffectiveTerm(), this.append);
 
                 return Task.FromResult(true);
             }

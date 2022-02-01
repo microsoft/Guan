@@ -7,7 +7,7 @@ namespace Guan.Logic
     using System;
     using System.Collections.Generic;
 
-    internal static class ConsoleSink
+    public static class ConsoleSink
     {
         private static ConsoleColor oldColor = Console.ForegroundColor;
         private static Dictionary<ConsoleColor, ConsoleColor> colorMapping = GetColorMapping();
