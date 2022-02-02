@@ -11,11 +11,13 @@ namespace GuanTest
         private List<string> rules_;
         private bool rulesReady_;
         private Module module_;
+        private ModuleProvider modules_;
 
         public GuanTestDispatcher()
         {
             rules_ = new List<string>();
             rulesReady_ = true;
+            modules_ = new ModuleProvider();
         }
 
         private static string GetTestFilePath(string location, string source)
@@ -175,6 +177,21 @@ namespace GuanTest
             return true;
         }
 
+        private bool Consult(List<string> args)
+        {
+            if (args.Count != 2)
+            {
+                return false;
+            }
+
+            modules_.Remove(Path.GetFileNameWithoutExtension(args[1]));
+            modules_.Add(Module.ParseAsync(args[1], modules_).Result);
+
+            rulesReady_ = false;
+
+            return true;
+        }
+
         private async Task<bool> TestQuery(List<string> args)
         {
             if (args.Count < 2)
@@ -217,17 +234,17 @@ namespace GuanTest
                 }
             }
 
-            QueryContext queryContext = new QueryContext();
-
             if (!rulesReady_ || module_ == null)
             {
-                module_ = Module.Parse("test", rules_, null);
+                module_ = Module.Parse("test", rules_, modules_);
             }
 
             ModuleProvider moduleProvider = new ModuleProvider();
             moduleProvider.Add(module_);
+            moduleProvider.Add(modules_);
 
-            Query query = Query.Create(args[1], queryContext, moduleProvider);
+            QueryContext queryContext = new QueryContext(moduleProvider);
+            Query query = Query.Create(args[1], queryContext);
 
             if (batch)
             {
@@ -278,6 +295,8 @@ namespace GuanTest
                     return Convert(args);
                 case "rules":
                     return SetRules(args);
+                case "consult":
+                    return Consult(args);
                 case "query":
                     return TestQuery(args).Result;
                 default:

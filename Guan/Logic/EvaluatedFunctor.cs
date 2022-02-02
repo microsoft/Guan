@@ -46,6 +46,11 @@ namespace Guan.Logic
                     return term;
                 }
 
+                if (arg is CompoundTerm)
+                {
+                    throw new GuanException($"Evaluated function {term} has unexpected argument {arg}");
+                }
+
                 args[i] = arg.GetObjectValue();
             }
 

@@ -73,6 +73,23 @@ namespace Guan.Logic
             return new Constant(value);
         }
 
+        internal CompoundTerm ToCompound()
+        {
+            Term term = this.GetEffectiveTerm();
+
+            CompoundTerm result = term as CompoundTerm;
+            if (result == null)
+            {
+                string name = term.GetStringValue();
+                if (name != null)
+                {
+                    result = new CompoundTerm(name);
+                }
+            }
+
+            return result;
+        }
+
         internal Term ForceEvaluate(QueryContext context)
         {
             Term result = this.GetEffectiveTerm();

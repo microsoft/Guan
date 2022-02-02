@@ -122,25 +122,30 @@ namespace GuanTest
             return result;
         }
 
-        static int Main()
+        static int Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            List<string> tests = new List<string>();
-            var scriptDirectory = Directory.GetFiles(Path.Combine($"{Environment.CurrentDirectory}", @"Scripts"));
-            
-            if (scriptDirectory.Length == 0)
+            if (args.Length == 0)
             {
-                throw new Exception("No test files found!");
+                GuanTestSession session = new GuanTestSession();
+                return session.Execute();
             }
 
-            foreach (var file in scriptDirectory)
+            List<string> tests = new List<string>();
+            foreach (string arg in args)
             {
-                tests.Add(file);
+                if (Directory.Exists(arg))
+                {
+                    tests.AddRange(Directory.GetFiles(arg));
+                }
+                else
+                {
+                    tests.Add(arg);
+                }
             }
 
             TestContext context = new TestContext(tests, 0);
-
             return context.Run();
         }
 
