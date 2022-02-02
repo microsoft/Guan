@@ -19,7 +19,7 @@ Within a code file (.cs) you must reference ```Guan.Logic``` in a using statemen
 ```C#
 using Guan.Logic;
 ```
-Guan supports the usage of Prolog-like logic rules (textual query expression) that employ the standard format: 
+Guan supports the usage of Prolog-like logic rules that employ the standard format: 
 
 A rule ```head``` which identifies a ```goal``` and series of ```sub-rules (or sub-goals)``` that form the logical workflow.
 
@@ -27,26 +27,31 @@ A rule ```head``` which identifies a ```goal``` and series of ```sub-rules (or s
 goal() :- subgoal1, subgoal2
 ```
 
-In Guan, ```goal``` is implemented as a ```CompoundTerm``` object. It can have any number of arguments (variables), which form the ```CompoundTerm.Arguments``` property, which is a ```List<TermArgument>```. We will revisit this later. 
+In Guan, ```goal``` is implemented as a ```CompoundTerm``` object. It can have any number of arguments (variables), which form the ```CompoundTerm.Arguments``` property, which is a ```List<TermArgument>```. Please see the [main readme Syntax section](https://github.com/microsoft/Guan#syntax) to learn more about the differences between Guan and Prolog with respect to supported logic rule syntax. You can see above that a trailing "." is not required in Guan logic rules, unlike Prolog.
 
 Let's create a simple program (.NET Core 3.1 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project.
 
 ```C#
 using Guan.Logic;
+using GuanExamples.ExternalPredicates;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace GuanExamples
 {
     class Program
     {
-        static void Main()
+        static async Task Main()
         {
             // External predicate types (as object instances or singletons (static single instances)) must be specified in a Guan FunctorTable object
             // which is used to create the Module, which is a collection of predicate types and is required by the Query executor (see RunQueryAsync impl in GuanQueryDispatcher.cs).
             var functorTable = new FunctorTable();
-            functorTable.Add(TestAdditionPredicateType.Singleton("addresult"));
-            functorTable.Add(TestDivisionPredicateType.Singleton("divresult"));
-            functorTable.Add(TestSubtractionPredicateType.Singleton("subresult"));
+            functorTable.Add(TestAddPredicateType.Singleton("addresult"));
+            functorTable.Add(TestDivPredicateType.Singleton("divresult"));
+            functorTable.Add(TestSubPredicateType.Singleton("subresult"));
+
+            // predicate name is hard-coded in the predicate's impl ("utcnow"). See GetDateTimeUtcNowPredicateType.cs.
+            functorTable.Add(GetDateTimeUtcNowPredicateType.Singleton());
 
             // Create a List<string> containing logic rules (these could also be housed in a text file). These rules are very simple by design, as are the external predicates used in this sample console app.
             // The rules below are simple examples of using logic in their sub rule parts and calling an external predicate.
@@ -71,30 +76,79 @@ namespace GuanExamples
                 "showtype(?x, 'nonvar') :- nonvar(?x)",
                 "showtype(?x, 'atom') :- atom(?x)",
                 "showtype(?x, 'compound') :- compound(?x)",
-                "f1(?a, ?b, ?b, ?a)"
+                "f1(?a, ?b, ?b, ?a)",
             };
 
-            // A Module is a collection of predicate types.
-            Module module = Module.Parse("test", logicsRules, functorTable);
-            var queryDispatcher = new GuanQueryDispatcher(module);
+            // List of rules - simple facts and a logic rule to determine if a specified person (?x) is a person.
+            var logicRules2 = new List<string>
+            {
+                "person(adam)",
+                "person(betty)",
+                "person(carl)",
+                "person(dan)",
+                "test(?x) :- not(person(?x)), WriteInfo('{0} is not a person', ?x)",
+                "test(?x) :- WriteInfo('{0} is a person', ?x)"
+             };
+
+            // The purpose of naming a Module is just to be able to identify the module instance if you need to for some reason.
+            // Other than that, there is nothing useful about Module name (it is not related to goal naming, for example).
+            // Think of name as simply the module id. Nothing more.
+            Module module2 = Module.Parse("persontests", logicRules2, null);
+            var queryDispatcher2 = new GuanQueryDispatcher(module2);
+
+            // This will return all facts in a comma-delimited string.
+            await queryDispatcher2.RunQueryAsync("person(?p)", logicRules2.Count);
             
-            /* Execute queries via GuanQueryDispatcher helper class */
+            // test if specified person is a known fact.
+            await queryDispatcher2.RunQueryAsync("test(charles)"); // charles is not a person.
+            await queryDispatcher2.RunQueryAsync("test(betty)"); // betty is a person.
+            var logicRules3 = new List<string>
+            {
+                // time() is a system predicate. Used without an arg, it results in DateTime.UtcNow. With a TimeSpan arg, it results in DateTime.UtcNow + arg.
+                // Guan will automatically convert a TimeSpan representation (like 1.00:00:00) to a .NET TimeSpan object.
+                "testdate(?dt) :- time(-1.00:00:00) > ?dt, WriteInfo('time() impl: {0} is more than 1 day ago', ?dt)",
+                // Or, for no good reason other than demonstrating how to write an external predicate that binds a value to a rule variable (see GetDateTimeUtcNowPredicateType.cs).
+                // You could use any value for the variable name used in utcnow. The key is that the predicate takes a single argument: a variable (of Guan type IndexedVariable, in fact).
+                "testdate1(?dt) :- utcnow(?n), ?n - ?dt > 1.00:00:00, WriteInfo('utcnow impl: {0} is more than 1 day ago', ?dt)",
+                // This will throw a GuanException because the argument for utcnow is grounded, not a variable.
+                "testdate2(?dt) :- utcnow(42)",
+                // Effectively, else rules.
+                "testdate(?dt) :- WriteInfo('time impl: {0} is less than 1 day ago', ?dt)",
+                "testdate1(?dt) :- WriteInfo('utcnow impl: {0} is less than 1 day ago', ?dt)",
+            };
 
-            // test goal with external predicate impls.
-            queryDispatcher.RunQueryAsync("test(3, 3)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(0, 0)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(5, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(3, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(4, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(2, 5)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(6, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(8, 2)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(25, 5)").GetAwaiter().GetResult();
-            queryDispatcher.RunQueryAsync("test(1, 0)").GetAwaiter().GetResult();
+            Module module3 = Module.Parse("testdates", logicRules3, functorTable);
+            var queryDispatcher3 = new GuanQueryDispatcher(module3);
 
-            // testx goals with internal predicate impls.
-            // the answer/result for the below query would be (x=1,y=2) given the rules.
-            queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)", true).GetAwaiter().GetResult();
+            // Specify query arg as a DateTime object (internally supported by Guan).
+            await queryDispatcher3.RunQueryAsync("testdate(DateTime('2022-01-21'))");
+            await queryDispatcher3.RunQueryAsync("testdate(DateTime('2022-02-22'))");
+
+            // Employs an external predicate in the rule..
+            await queryDispatcher3.RunQueryAsync("testdate1(DateTime('2022-01-21'))");
+            await queryDispatcher3.RunQueryAsync("testdate1(DateTime('2022-02-22'))");
+
+            // Crash. Uncomment and run app to see why (or, you could look at the code in GetDateTimeUtcNowPredicateType.GetNextTermAsync function).
+            // await queryDispatcher3.RunQueryAsync("testdate2(DateTime('2022-01-25'))");
+
+            Module module = Module.Parse("testx", logicsRules, functorTable);
+            var queryDispatcher = new GuanQueryDispatcher(module);
+
+            // test goal with arithmetic external predicates.
+            await queryDispatcher.RunQueryAsync("test(3, 3)");
+            await queryDispatcher.RunQueryAsync("test(0, 0)");
+            await queryDispatcher.RunQueryAsync("test(5, 2)");
+            await queryDispatcher.RunQueryAsync("test(3, 2)");
+            await queryDispatcher.RunQueryAsync("test(4, 2)");
+            await queryDispatcher.RunQueryAsync("test(2, 5)");
+            await queryDispatcher.RunQueryAsync("test(6, 2)");
+            await queryDispatcher.RunQueryAsync("test(8, 2)");
+            await queryDispatcher.RunQueryAsync("test(25, 5)");
+            await queryDispatcher.RunQueryAsync("test(1, 0)");
+
+            // testx goals with internal predicates.
+            await queryDispatcher.RunQueryAsync("test4(?x, ?y), test2(?y)"); // (x=1,y=2)
+            await queryDispatcher.RunQueryAsync("test5(?x, ?y), test1(?y)"); // (x=2, y=2)
         }
     }
 }
@@ -109,6 +163,7 @@ There are three main pieces to executing a Guan query:
 Let's look at the simple helper class in the ```GuanExamples``` project, ```GuanQueryDispatcher```, to make this more clear.  
 
 ```C#
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Guan.Logic;
@@ -117,7 +172,6 @@ namespace GuanExamples
 {
     public class GuanQueryDispatcher
     {
-        // This is set by the consumer of this type via this class's constructor.        
         private readonly Module module_;
 
         public GuanQueryDispatcher(Module module)
@@ -125,7 +179,7 @@ namespace GuanExamples
             module_ = module;
         }
 
-        public async Task RunQueryAsync(string queryExpression, bool showResult = false)
+        public async Task RunQueryAsync(string queryExpression, int maxResults = 1)
         {
             // Required QueryContext instance.
             QueryContext queryContext = new QueryContext();
@@ -138,13 +192,18 @@ namespace GuanExamples
             Query query = Query.Create(queryExpression, queryContext, moduleProvider);
 
             // Execute the query. 
-            // result will be () if there is no answer/result for supplied query 
-            // (see the simple external predicate rules, for example).
-            Term result = await query.GetNextAsync();
-
-            if (showResult)
+            // result will be () if there is no answer/result for supplied query (see the simple external predicate rules, for example).
+            if (maxResults == 1)
             {
-                Console.WriteLine($"answer: {result}");
+                // Gets one result.
+                Term result = await query.GetNextAsync();
+                Console.WriteLine($"answer: {result}"); // () if there is no answer.
+            }
+            else
+            {
+                // Gets multiple results, if possible, up to supplied maxResults value.
+                List<Term> results = await query.GetResultsAsync(maxResults);
+                Console.WriteLine($"answer: {string.Join(',', results)}"); // convert the List<Term> object into a comma-delimited string.
             }
         }
     }
