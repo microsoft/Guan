@@ -107,7 +107,7 @@ namespace GuanExamples
                 // time() is a system predicate. Used without an arg, it results in DateTime.UtcNow. With a TimeSpan arg, it results in DateTime.UtcNow + arg.
                 // Guan will automatically convert a TimeSpan representation (like 1.00:00:00) to a .NET TimeSpan object.
                 "testdate(?dt) :- time(-1.00:00:00) > ?dt, WriteInfo('time() impl: {0} is more than 1 day ago', ?dt)",
-                // Or, for no good reason other than demonstrating how to write an external predicate that binds a value to a rule variable (see GetDateTimeUtcNowPredicateType.cs).
+                // Or, for no good reason other than demonstrating how to write an external predicate that binds a value to rule variable (see GetDateTimeUtcNowPredicateType.cs).
                 // You could use any value for the variable name used in utcnow. The key is that the predicate takes a single argument: a variable (of Guan type IndexedVariable, in fact).
                 "testdate1(?dt) :- utcnow(?n), ?n - ?dt > 1.00:00:00, WriteInfo('utcnow impl: {0} is more than 1 day ago', ?dt)",
                 // This will throw a GuanException because the argument for utcnow is grounded, not a variable.
@@ -181,15 +181,15 @@ namespace GuanExamples
 
         public async Task RunQueryAsync(string queryExpression, int maxResults = 1)
         {
-            // Required QueryContext instance.
-            QueryContext queryContext = new QueryContext();
-
             // Required ModuleProvider instance. You created the module used in its construction in Program.cs.
             ModuleProvider moduleProvider = new ModuleProvider();
             moduleProvider.Add(module_);
 
-            // The Query instance that will be used to execute the supplied logic rule, queryExpression arg.
-            Query query = Query.Create(queryExpression, queryContext, moduleProvider);
+            // Required QueryContext instance. You must supply moduleProvider (it implements IFunctorProvider).
+            QueryContext queryContext = new QueryContext(moduleProvider);
+
+            // The Query instance that will be used to execute the supplied query expression over the related rules.
+            Query query = Query.Create(queryExpression, queryContext);
 
             // Execute the query. 
             // result will be () if there is no answer/result for supplied query (see the simple external predicate rules, for example).
