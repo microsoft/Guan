@@ -37,6 +37,14 @@ namespace Guan.Logic
             }
         }
 
+        public void Remove(string moduleName)
+        {
+            foreach (PredicateFunctorList entry in this.types.Values)
+            {
+                entry.RemoveModule(moduleName);
+            }
+        }
+
         public Functor FindFunctor(string name, Module from)
         {
             PredicateFunctorList entry;
@@ -77,6 +85,17 @@ namespace Guan.Logic
         /// </summary>
         private class PredicateFunctorList : List<PredicateType>
         {
+            public void RemoveModule(string name)
+            {
+                for (int i = this.Count - 1; i >= 0; i--)
+                {
+                    if (this[i].Module.Name == name)
+                    {
+                        this.RemoveAt(i);
+                    }
+                }
+            }
+
             public PredicateType Find(Module from)
             {
                 if (this.Count == 1)

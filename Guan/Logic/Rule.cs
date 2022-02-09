@@ -149,6 +149,13 @@ namespace Guan.Logic
                 return null;
             }
 
+            if (VariablePattern.IsMatch(name))
+            {
+                result = new CompoundTerm(CallPredicateType.Singleton);
+                result.AddArgument(term, "0");
+                return result;
+            }
+
             return new CompoundTerm(Functor.Parse(name));
         }
 

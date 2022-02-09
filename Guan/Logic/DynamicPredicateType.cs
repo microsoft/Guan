@@ -19,7 +19,7 @@ namespace Guan.Logic
 
         public override PredicateResolver CreateResolver(CompoundTerm input, Constraint constraint, QueryContext context)
         {
-            PredicateType assertedType = context.GetAssertedPredicateType(this.Name);
+            PredicateType assertedType = context.DynamicModule.GetPredicateType(this.Name);
             if (assertedType == null)
             {
                 assertedType = FailPredicateType.Singleton;

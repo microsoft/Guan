@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GuanTest": {
+      "commandName": "Project",
+      "commandLineArgs": "Scripts\\p1.test"
+    }
+  }
+}

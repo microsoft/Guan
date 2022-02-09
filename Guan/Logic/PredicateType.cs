@@ -14,6 +14,7 @@ namespace Guan.Logic
         private static object builtInTypesLock = new object();
 
         private static Dictionary<string, PredicateType> builtInTypes = null;
+        private static readonly EvaluatedFunctor NotConstraint = new EvaluatedFunctor(NotFunc.Singleton);
 
         private Module module;
         private bool isPublic;
@@ -119,6 +120,31 @@ namespace Guan.Logic
 
         public virtual void AdjustTerm(CompoundTerm term, Rule rule)
         {
+            if (term.Functor.Name == "not")
+            {
+                CompoundTerm goal = term.Arguments[0].Value.GetEffectiveTerm() as CompoundTerm;
+                if (goal?.Functor is EvaluatedFunctor)
+                {
+                    term.Functor = NotConstraint.ConstraintType;
+                }
+            }
+        }
+
+        protected PredicateResolver CreateDynamicResolver(Term term, Constraint constraint, QueryContext context)
+        {
+            CompoundTerm goal = term.ToCompound();
+            PredicateType predicateType = goal.Functor as PredicateType;
+
+            if (predicateType == null)
+            {
+                predicateType = Module.GetGoalPredicateType(goal.Functor.Name, context.Provider, this.module);
+                if (predicateType == null)
+                {
+                    throw new GuanException($"{term} is not a valid goal term");
+                }
+            }
+
+            return predicateType.CreateResolver(goal, constraint, context);
         }
 
         internal void LoadRules(List<string> rules, IFunctorProvider provider)
@@ -188,7 +214,6 @@ namespace Guan.Logic
             AddType(result, ForwardCutPredicateType.Singleton);
             AddType(result, FailPredicateType.Singleton);
             AddType(result, UnifyPredicateType.Regular);
-            AddType(result, NotPredicateType.Singleton);
             AddType(result, TermPropertyPredicateType.Var);
             AddType(result, TermPropertyPredicateType.NonVar);
             AddType(result, TermPropertyPredicateType.Atom);
@@ -214,6 +239,8 @@ namespace Guan.Logic
             AddType(result, SleepPredicateType.Singleton);
             AddType(result, RegexPredicateType.Singleton);
             AddType(result, QueryToListPredicateType.Singleton);
+            AddType(result, CallPredicateType.Singleton);
+            AddType(result, RetractPredicateType.Singleton);
 
             return result;
         }
