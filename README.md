@@ -100,6 +100,7 @@ atom
 compound 
 ground 
 = (unify) 
+retract
 
 Some commonly used predicates for list related operations: 
 
