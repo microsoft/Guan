@@ -1,6 +1,6 @@
 ## Getting Started with Guan
 
-Guan, which is built as a ```.NET Standard Library```, is designed to be used as part of an existing application (.NET Core, .NET Desktop) where there is a need for logic programming. The consuming program
+Guan, which is built as a ```.NET Standard Library```, is designed to be used as part of an existing application (.NET Core, .NET Desktop) where there is a need for [logic programming](http://ggp.stanford.edu/notes/blp.html). The consuming program
 can either house logic rules in files or supply them as string arguments directly to Guan. The purpose of this document is show how to use Guan within an application.  
 
 ### Installing Guan 
