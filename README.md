@@ -18,7 +18,7 @@ Please see the [Getting Started](./GettingStarted.md) section to play around wit
 
 As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/index.php). We will not describe things that are common with standard Prolog, but rather present the differences below (they are different mostly to allow more natural interop between rules and C# code): 
 
-* The trailing '.' is not required as a delimiter for Guan logic rules as every rule is represented in a separate string. 
+* The trailing '.' is not required as a delimiter for Guan logic rules as every rule is represented in a separate string. However, you could employ the trailing "." for use in delimiting rules in a file that contains multiple rules (and rules that contain complex logic or multiple sub rules). You would then write your own pre-parser to feed the rules into a ```List<string>``, which is what Guan expects.
 
 * A variable must start with a '?', followed by alphanumeric characters (\w) or underscore. For example: ```?a```, ```?A```, ```?_a```, ```?aa_``` are all valid variables. **Note that this is very different from Prolog where the first character must be capitalized**. 
 
@@ -37,6 +37,8 @@ As stated above, Guan uses [Prolog style syntax](http://www.learnprolognow.org/i
    * If the argument is a variable, the argument name will be the same as the variable name. For example, ```TraceRecord(Source=?NodeId, GroupType=P2P.Send, ?text, time=?t)```. The name of the 3rd argument is inferred to be "text". 
 
    * If the argument is a compound, the argument name will be the same as the functor name. For example, ```somegoal(arg0=0, point(1, 2))```. The name of the second argument is "point". 
+
+A note on named arguments. When to use them? The most important reason to use named arguments is to support optional arguments. Only when an argument is present on both sides will unification be performed. This is major difference with regular Prolog, but is very convenient for predicate authors.
 
 * The custom behavior of a predicate type might implement type-specific syntax sugar: if the head of a rule with the corresponding type does not have an argument mentioned, the argument will be added automatically with the value being a variable with the same name. For example, suppose "mygoal" is a type which has two arguments v1 and v2, the following rules are all equivalent: 
 
