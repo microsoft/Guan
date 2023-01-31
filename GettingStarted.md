@@ -29,7 +29,7 @@ goal() :- subgoal1, subgoal2
 
 In Guan, ```goal``` is implemented as a ```CompoundTerm``` object. It can have any number of arguments (variables), which form the ```CompoundTerm.Arguments``` property, which is a ```List<TermArgument>```. Please see the [main readme Syntax section](https://github.com/microsoft/Guan#syntax) to learn more about the differences between Guan and Prolog with respect to supported logic rule syntax. You can see above that a trailing "." is not required in Guan logic rules, unlike Prolog.
 
-Let's create a simple program (.NET Core 3.1 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project.
+Let's create a simple program (.NET 6 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project.
 
 ```C#
 using Guan.Logic;
