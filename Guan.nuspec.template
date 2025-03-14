@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="3.3.0">
     <id>%PACKAGE_ID%</id>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 	  <releaseNotes>
 - This new version contains an updated System.Text.Json dependency. This is a critical update due to vulnerablity in older System.Json.Text pacakge.
 	  </releaseNotes>
@@ -18,7 +18,7 @@
       <files include="**" buildAction="None" copyToOutput="true" />
     </contentFiles>
     <dependencies>
-	  <dependency id="System.Text.Json" version="6.0.0" />
+	  <dependency id="System.Text.Json" version="8.0.5" />
     </dependencies>
     <projectUrl>https://github.com/microsoft/guan</projectUrl>
     <tags>guan logic-programming netstandard20 netcore csharp</tags>
