@@ -4,7 +4,7 @@
     <id>%PACKAGE_ID%</id>
     <version>1.0.7</version>
 	  <releaseNotes>
-- This new version contains an updated System.Text.Json dependency. This is a critical update due to vulnerablity in older System.Json.Text pacakge.
+- This new version contains an updated System.Text.Json dependency. This is a critical update due to vulnerability in older System.Json.Text package.
 	  </releaseNotes>
     <authors>Microsoft</authors>
     <license type="expression">MIT</license>
