@@ -9,10 +9,13 @@ You can install Guan into an existing application by adding a ```PackageReferenc
 
 ``` XML
 <ItemGroup>
-    <PackageReference Include="Microsoft.Logic.Guan" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Logic.Guan" Version="1.0.7" />
     ...
 </ItemGroup>
 ```
+This example uses the currently published package. The updated package can be
+built locally with `Build-NugetPackage.ps1`; publication requires separate approval.
+
 ### Using Guan from external code
 Within a code file (.cs) you must reference ```Guan.Logic``` in a using statement:
 
