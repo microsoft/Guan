@@ -22,6 +22,11 @@ Run `./Build-NugetPackage.ps1` to create the package with SDK-generated dependen
 metadata. For temporary local-feed integration, pass
 `-PackageVersion 1.0.8-local`; do not commit that version into a consuming repository
 or publish it without approval.
+Both build scripts run from the repository to honor its SDK pin and restore
+the caller's directory afterward. Their outputs are separated under
+`bin/release` and `bin/debug` according to `-Configuration`.
+Run `./Test-BuildScripts.ps1` to verify this behavior from a caller directory
+with a conflicting SDK pin and confirm Debug does not modify Release artifacts.
 
 Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code. It is assumed that you are already familiar with logic programming.
 
