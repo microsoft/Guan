@@ -1,5 +1,10 @@
 # Guan
 
+The library targets .NET Standard 2.0 and uses the supported System.Text.Json 10
+dependency line. The repository's test harness and examples require .NET 10.
+The package is built using `dotnet pack`, which generates dependency metadata
+from the library project rather than a separately maintained specification.
+
 ![Alt text](https://raw.githubusercontent.com/microsoft/Guan/main/icon.png "guan")
 
 Guan (to observe in Mandarin) is a general-purpose logic programming system written in C# and built as a .NET Standard Library. It has been tested in both Windows and Linux environments. 

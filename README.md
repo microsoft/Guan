@@ -12,6 +12,17 @@ Author: Lu Xun, Microsoft.
 
 ### Getting Started 
 
+Build the harness and examples with the .NET 10 SDK pinned in `global.json`.
+The library continues to target `netstandard2.0`; its assembly identity remains
+`Guan, Version=1.0.0.0` for existing consumers.
+
+Run `./Test-Guan.ps1` to execute each console test script and the custom-predicate
+examples. `dotnet test` does not execute this console harness.
+Run `./Build-NugetPackage.ps1` to create the package with SDK-generated dependency
+metadata. For temporary local-feed integration, pass
+`-PackageVersion 1.0.8-local`; do not commit that version into a consuming repository
+or publish it without approval.
+
 Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code. It is assumed that you are already familiar with logic programming.
 
 ### Syntax

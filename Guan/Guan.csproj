@@ -1,8 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Microsoft.Logic.Guan</PackageId>
+    <Version>1.0.8</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Authors>Microsoft</Authors>
+    <Description>Guan: a general-purpose logic programming library for .NET Standard.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/microsoft/Guan</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/microsoft/Guan</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>guannuget.md</PackageReadmeFile>
+    <PackageTags>guan;logic-programming;netstandard20;csharp</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-	<PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.Json" Version="10.0.15" />
+    <None Include="..\icon.png" Pack="true" PackagePath="\" />
+    <None Include="..\guannuget.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
