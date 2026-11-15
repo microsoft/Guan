@@ -9,7 +9,7 @@ $packageId = $project.Project.PropertyGroup.PackageId
 $version = $project.Project.PropertyGroup.Version
 if (!$packageId -or !$version) { throw "Guan package identity is missing." }
 
-$dotnet = (Get-Command dotnet -CommandType Application).Source
+$dotnet = (Get-Command dotnet -CommandType Application | Select-Object -First 1).Source
 $probe = Start-Process $dotnet -ArgumentList '--version' -WorkingDirectory $caller -Wait -PassThru `
     -RedirectStandardOutput (Join-Path $testRoot 'caller-sdk.stdout.log') `
     -RedirectStandardError (Join-Path $testRoot 'caller-sdk.stderr.log')
