@@ -26,6 +26,10 @@ jobs:
       - name: Verify script SDK and configuration isolation
         shell: pwsh
         run: ./Test-BuildScripts.ps1
+      - name: Verify Windows PowerShell 5.1 compatibility
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./Test-BuildScripts.ps1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

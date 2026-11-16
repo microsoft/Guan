@@ -1,10 +1,10 @@
 $ErrorActionPreference = "Stop"
-$testRoot = Join-Path $PSScriptRoot 'bin' 'script-tests'
+$testRoot = [IO.Path]::Combine($PSScriptRoot, 'bin', 'script-tests')
 $caller = Join-Path $testRoot 'caller'
 New-Item -ItemType Directory -Force -Path $caller | Out-Null
 [IO.File]::WriteAllText((Join-Path $caller 'global.json'),
     '{"sdk":{"version":"99.0.100","rollForward":"disable","allowPrerelease":false}}')
-[xml] $project = Get-Content (Join-Path $PSScriptRoot 'Guan' 'Guan.csproj') -Raw
+[xml] $project = Get-Content ([IO.Path]::Combine($PSScriptRoot, 'Guan', 'Guan.csproj')) -Raw
 $packageId = $project.Project.PropertyGroup.PackageId
 $version = $project.Project.PropertyGroup.Version
 if (!$packageId -or !$version) { throw "Guan package identity is missing." }
@@ -23,9 +23,9 @@ try {
         if ((Get-Location).ProviderPath -ne $location) { throw "Publishing did not restore the caller's directory." }
         & (Join-Path $PSScriptRoot 'Build-NugetPackage.ps1') -Configuration $configuration
         if ((Get-Location).ProviderPath -ne $location) { throw "Packaging did not restore the caller's directory." }
-        $outputRoot = Join-Path $PSScriptRoot 'bin' $configuration.ToLowerInvariant()
-        $assembly = Join-Path $outputRoot 'netstandard2.0' 'Guan.dll'
-        $package = Join-Path $outputRoot 'Guan' 'Nugets' "$packageId.$version.nupkg"
+        $outputRoot = [IO.Path]::Combine($PSScriptRoot, 'bin', $configuration.ToLowerInvariant())
+        $assembly = [IO.Path]::Combine($outputRoot, 'netstandard2.0', 'Guan.dll')
+        $package = [IO.Path]::Combine($outputRoot, 'Guan', 'Nugets', "$packageId.$version.nupkg")
         if (!(Test-Path -LiteralPath $assembly) -or !(Test-Path -LiteralPath $package)) {
             throw "$configuration artifacts are missing from the configuration-specific output."
         }

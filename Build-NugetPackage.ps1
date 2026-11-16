@@ -6,8 +6,8 @@ param(
 $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot
 try {
-    $project = Join-Path $PSScriptRoot 'Guan' 'Guan.csproj'
-    $output = Join-Path $PSScriptRoot 'bin' $Configuration.ToLowerInvariant() 'Guan' 'Nugets'
+    $project = [IO.Path]::Combine($PSScriptRoot, 'Guan', 'Guan.csproj')
+    $output = [IO.Path]::Combine([string[]]@($PSScriptRoot, 'bin', $Configuration.ToLowerInvariant(), 'Guan', 'Nugets'))
     $arguments = @("pack", $project, "-c", $Configuration, "-o", $output)
     if ($PackageVersion) { $arguments += "-p:PackageVersion=$PackageVersion" }
 

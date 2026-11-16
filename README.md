@@ -25,8 +25,10 @@ or publish it without approval.
 Both build scripts run from the repository to honor its SDK pin and restore
 the caller's directory afterward. Their outputs are separated under
 `bin/release` and `bin/debug` according to `-Configuration`.
+The build scripts support Windows PowerShell 5.1 and PowerShell 7.
 Run `./Test-BuildScripts.ps1` to verify this behavior from a caller directory
 with a conflicting SDK pin and confirm Debug does not modify Release artifacts.
+Windows CI runs these checks in both PowerShell versions; Ubuntu CI uses PowerShell 7.
 
 Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code. It is assumed that you are already familiar with logic programming.
 
