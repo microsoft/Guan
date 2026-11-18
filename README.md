@@ -20,7 +20,7 @@ See [Getting Started](./GettingStarted.md) for library usage and
 Use a .NET 10 SDK compatible with [global.json](global.json) and Windows
 PowerShell 5.1 or PowerShell 7.
 
-- [Build-Guan.ps1](Build-Guan.ps1) builds and publishes the projects.
+- [Build-Guan.ps1](Build-Guan.ps1) publishes the library.
 - [Test-Guan.ps1](Test-Guan.ps1) runs every console test script and the custom-predicate examples. `dotnet test` does not execute this harness.
 - [Build-NugetPackage.ps1](Build-NugetPackage.ps1) creates the NuGet package.
 - [Test-BuildScripts.ps1](Test-BuildScripts.ps1) checks SDK selection, caller-directory restoration, and configuration isolation.
