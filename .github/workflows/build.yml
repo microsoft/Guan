@@ -1,0 +1,39 @@
+name: Build and test
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+permissions:
+  contents: read
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Execute console harness and custom predicates
+        shell: pwsh
+        run: ./Test-Guan.ps1
+      - name: Build NuGet package
+        shell: pwsh
+        run: ./Build-NugetPackage.ps1
+      - name: Verify script SDK and configuration isolation
+        shell: pwsh
+        run: ./Test-BuildScripts.ps1
+      - name: Verify Windows PowerShell 5.1 compatibility
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./Test-BuildScripts.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guan-${{ matrix.os }}
+          path: |
+            bin/release/Guan/Nugets/*.nupkg
+            *.log

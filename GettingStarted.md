@@ -9,10 +9,13 @@ You can install Guan into an existing application by adding a ```PackageReferenc
 
 ``` XML
 <ItemGroup>
-    <PackageReference Include="Microsoft.Logic.Guan" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Logic.Guan" Version="1.0.7" />
     ...
 </ItemGroup>
 ```
+This example uses the currently published package. The updated package can be
+built locally with `Build-NugetPackage.ps1`; publication requires separate approval.
+
 ### Using Guan from external code
 Within a code file (.cs) you must reference ```Guan.Logic``` in a using statement:
 
@@ -29,7 +32,7 @@ goal() :- subgoal1, subgoal2
 
 In Guan, ```goal``` is implemented as a ```CompoundTerm``` object. It can have any number of arguments (variables), which form the ```CompoundTerm.Arguments``` property, which is a ```List<TermArgument>```. Please see the [main readme Syntax section](https://github.com/microsoft/Guan#syntax) to learn more about the differences between Guan and Prolog with respect to supported logic rule syntax. You can see above that a trailing "." is not required in Guan logic rules, unlike Prolog.
 
-Let's create a simple program (.NET 6 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project.
+Let's create a simple program (.NET 10 Console app) with very simple rules and a few external predicates. You can run this program by building and running the [GuanExamples](/GuanExamples) project. The Guan library itself remains compatible with .NET Standard 2.0 consumers.
 
 ```C#
 using Guan.Logic;
@@ -372,4 +375,3 @@ namespace GuanExamples.ExternalPredicates
     }
 }
 ```
-

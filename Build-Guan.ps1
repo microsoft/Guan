@@ -1,14 +1,13 @@
+param([string] $Configuration = "Release")
+
 $ErrorActionPreference = "Stop"
 
-$Configuration="Release"
-[string] $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
+Push-Location $PSScriptRoot
 try {
-    Push-Location $scriptPath
-
-    Remove-Item $scriptPath\Guan\bin\release\netstandard2.0\ -Recurse -Force -EA SilentlyContinue
-
-    dotnet publish $scriptPath\Guan\Guan.csproj -o bin\release\netstandard2.0 -c $Configuration
+    $project = [IO.Path]::Combine($PSScriptRoot, 'Guan', 'Guan.csproj')
+    $output = [IO.Path]::Combine($PSScriptRoot, 'bin', $Configuration.ToLowerInvariant(), 'netstandard2.0')
+    dotnet publish $project -c $Configuration -o $output
+    if ($LASTEXITCODE -ne 0) { throw "Guan publish failed: $LASTEXITCODE" }
 }
 finally {
     Pop-Location
