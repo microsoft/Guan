@@ -2,7 +2,7 @@
 
 ![Alt text](/icon.png "guan")
 
-Guan (to observe in Mandarin) is a general-purpose logic programming system written in C# and built as a .NET Standard Library. It has been tested in both Windows and Linux environments. 
+Guan (to observe in Mandarin) is a general-purpose logic programming system written in C# that targets .NET Standard 2.0. It has been tested in both Windows and Linux environments.
 
 Guan employs Prolog style syntax for writing logic rules. It enables easy interop between such rules with regular C# code and the vast .NET Base Class Library. External Predicates are written in C# and logic rules can be housed in simple text files or as string variables in your consuming program. These logic rules will be parsed and executed by Guan, which provides imperative, procedural, and even functional programming idioms the expressive power of logic programming for use in several novel contexts, not the least of which is [Configuration-as-Logic](https://github.com/microsoft/service-fabric-healer). 
 
@@ -12,25 +12,21 @@ Author: Lu Xun, Microsoft.
 
 ### Getting Started 
 
-Build the harness and examples with the .NET 10 SDK pinned in `global.json`.
-The library continues to target `netstandard2.0`; its assembly identity remains
-`Guan, Version=1.0.0.0` for existing consumers.
+See [Getting Started](./GettingStarted.md) for library usage and
+[GuanExamples](/GuanExamples) for sample rules and custom predicates.
 
-Run `./Test-Guan.ps1` to execute each console test script and the custom-predicate
-examples. `dotnet test` does not execute this console harness.
-Run `./Build-NugetPackage.ps1` to create the package with SDK-generated dependency
-metadata. For temporary local-feed integration, pass
-`-PackageVersion 1.0.8-local`; do not commit that version into a consuming repository
-or publish it without approval.
-Both build scripts run from the repository to honor its SDK pin and restore
-the caller's directory afterward. Their outputs are separated under
-`bin/release` and `bin/debug` according to `-Configuration`.
-The build scripts support Windows PowerShell 5.1 and PowerShell 7.
-Run `./Test-BuildScripts.ps1` to verify this behavior from a caller directory
-with a conflicting SDK pin and confirm Debug does not modify Release artifacts.
-Windows CI runs these checks in both PowerShell versions; Ubuntu CI uses PowerShell 7.
+### Building and testing
 
-Please see the [Getting Started](./GettingStarted.md) section to play around with Guan in a sample application, [GuanExamples](/GuanExamples), with very simple rules, simple External Predicate implementations, and highly documented sample code. It is assumed that you are already familiar with logic programming.
+Use a .NET 10 SDK compatible with [global.json](global.json) and Windows
+PowerShell 5.1 or PowerShell 7.
+
+- [Build-Guan.ps1](Build-Guan.ps1) builds and publishes the projects.
+- [Test-Guan.ps1](Test-Guan.ps1) runs every console test script and the custom-predicate examples. `dotnet test` does not execute this harness.
+- [Build-NugetPackage.ps1](Build-NugetPackage.ps1) creates the NuGet package.
+- [Test-BuildScripts.ps1](Test-BuildScripts.ps1) checks SDK selection, caller-directory restoration, and configuration isolation.
+
+Build and package outputs are under `bin/release` or `bin/debug`, selected by
+`-Configuration`.
 
 ### Syntax
 
